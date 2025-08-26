@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { ArrowRight, RotateCcw, CheckCircle } from 'lucide-react';
+import { ArrowRight, RotateCcw, CheckCircle, Zap } from 'lucide-react';
 import * as THREE from 'three';
 
 interface Ingredient {
@@ -556,6 +556,12 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     setSelectedIngredients([]);
   };
 
+  const completePizza = () => {
+    if (currentOrder) {
+      setSelectedIngredients([...currentOrder.ingredients]);
+    }
+  };
+
   const startGame = () => {
     setGameStarted(true);
   };
@@ -798,6 +804,13 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                   >
                     <span className="text-2xl mr-2">🍕</span>
                     SERVE
+                  </Button>
+                  <Button 
+                    onClick={completePizza}
+                    variant="outline"
+                    className="w-16 h-16 rounded-full bg-blue-100 hover:bg-blue-200 border-blue-300"
+                  >
+                    <Zap className="w-6 h-6 text-blue-600" />
                   </Button>
                   <Button 
                     onClick={resetPizza} 
