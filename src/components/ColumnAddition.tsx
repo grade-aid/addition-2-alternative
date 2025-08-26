@@ -285,8 +285,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     const answerCorrect = userInputs.answer.every((val, i) => val === solved.correctAnswer[i]);
     const carriesCorrect = userInputs.carries.every((val, i) => val === solved.correctCarries[i]);
     
-    // Only require the final answer to be correct - carries are just helpers
-    const correct = answerCorrect;
+    const correct = answerCorrect && carriesCorrect;
     setIsCorrect(correct);
     
     // Track correct answers for pizza game trigger
