@@ -32,15 +32,25 @@ const INGREDIENTS: Ingredient[] = [
   { id: 'onion', name: 'Red Onions', price: 1, emoji: '🧅', color: '#9370DB', shape: 'onion' }
 ];
 
+// Pizza Plate Component
+function PizzaPlate() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
+      <cylinderGeometry args={[5, 5, 0.1, 32]} />
+      <meshPhongMaterial color="#8B4513" />
+    </mesh>
+  );
+}
+
 // Pizza Base Component
 function PizzaBase() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      <cylinderGeometry args={[6, 6, 0.3, 32]} />
+      <cylinderGeometry args={[4, 4, 0.2, 32]} />
       <meshPhongMaterial color="#D4A574" />
-      {/* Crust */}
-      <mesh position={[0, 0.1, 0]}>
-        <torusGeometry args={[6, 0.5, 16, 100]} />
+      {/* Crust edge - slightly raised rim */}
+      <mesh position={[0, 0.05, 0]}>
+        <cylinderGeometry args={[4, 3.8, 0.1, 32]} />
         <meshPhongMaterial color="#C19660" />
       </mesh>
     </mesh>
@@ -51,18 +61,18 @@ function PizzaBase() {
 function Sauce() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-      <cylinderGeometry args={[5.5, 5.5, 0.02, 32]} />
+      <cylinderGeometry args={[3.5, 3.5, 0.02, 32]} />
       <meshPhongMaterial color="#C73E1A" />
     </mesh>
   );
 }
 
 function Cheese() {
-  const positions = Array.from({ length: 25 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 18 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -77,11 +87,11 @@ function Cheese() {
 }
 
 function Pepperoni() {
-  const positions = Array.from({ length: 15 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 10 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -96,11 +106,11 @@ function Pepperoni() {
 }
 
 function Mushrooms() {
-  const positions = Array.from({ length: 12 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 8 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -115,11 +125,11 @@ function Mushrooms() {
 }
 
 function Peppers() {
-  const positions = Array.from({ length: 15 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 10 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -134,11 +144,11 @@ function Peppers() {
 }
 
 function Olives() {
-  const positions = Array.from({ length: 12 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 8 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -153,12 +163,12 @@ function Olives() {
 }
 
 function Sausage() {
-  const positions = Array.from({ length: 20 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 14 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2,
     scale: 0.2 + Math.random() * 0.2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -173,11 +183,11 @@ function Sausage() {
 }
 
 function Onions() {
-  const positions = Array.from({ length: 12 }, () => ({
-    x: (Math.random() - 0.5) * 10,
-    z: (Math.random() - 0.5) * 10,
+  const positions = Array.from({ length: 8 }, () => ({
+    x: (Math.random() - 0.5) * 7,
+    z: (Math.random() - 0.5) * 7,
     rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 5.5);
+  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
 
   return (
     <>
@@ -217,6 +227,7 @@ function RotatingPizza({ selectedIngredients }: { selectedIngredients: string[] 
 
   return (
     <group ref={pizzaRef}>
+      <PizzaPlate />
       <PizzaBase />
       {selectedIngredients.map(renderIngredient)}
     </group>
@@ -338,7 +349,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 3D Pizza Viewer */}
           <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4">
-            <Canvas camera={{ position: [0, 8, 12], fov: 50 }}>
+            <Canvas camera={{ position: [5, 8, 5], fov: 50 }}>
               <ambientLight intensity={0.4} />
               <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
               <RotatingPizza selectedIngredients={selectedIngredients} />
