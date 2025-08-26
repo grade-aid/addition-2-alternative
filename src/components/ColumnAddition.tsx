@@ -320,51 +320,28 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
           <div className="flex justify-center gap-4">
             {phase === 'examples' ? (
               <>
-                <div className="flex gap-2">
-                  {!isAutoPlaying ? (
-                    <Button 
-                      onClick={startAutoPlay} 
-                      className="grade-button"
-                      disabled={currentStep >= (examples[exampleIndex]?.steps.length || 0) - 1}
-                    >
-                      <Play className="w-5 h-5 mr-2" />
-                      {currentStep === -1 ? 'Start' : 'Play'}
-                    </Button>
-                  ) : (
-                    <Button onClick={pauseAutoPlay} className="grade-button secondary">
-                      <Pause className="w-5 h-5 mr-2" />
-                      Pause
-                    </Button>
-                  )}
-                  
+                {currentStep < (examples[exampleIndex]?.steps.length || 0) - 1 ? (
                   <Button 
-                    onClick={nextStep} 
-                    className="grade-button secondary"
-                    disabled={currentStep >= (examples[exampleIndex]?.steps.length || 0) - 1}
+                    onClick={startAutoPlay} 
+                    className="grade-button"
+                    disabled={isAutoPlaying}
                   >
-                    <SkipForward className="w-5 h-5 mr-2" />
-                    Next Step
+                    <Play className="w-5 h-5 mr-2" />
+                    {currentStep === -1 ? 'Play Example' : 'Playing...'}
                   </Button>
-                  
-                  <Button onClick={resetSteps} className="grade-button secondary">
-                    <RotateCcw className="w-5 h-5 mr-2" />
-                    Reset
-                  </Button>
-                </div>
-                
-                <div className="flex gap-2">
-                  {exampleIndex < examples.length - 1 ? (
-                    <Button onClick={nextExample} className="grade-button">
-                      Next Example <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  ) : (
-                    currentStep >= (examples[exampleIndex]?.steps.length || 0) - 1 && (
+                ) : (
+                  <>
+                    {exampleIndex < examples.length - 1 ? (
+                      <Button onClick={nextExample} className="grade-button">
+                        Next Example <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    ) : (
                       <Button onClick={startPractice} className="grade-button accent">
                         Start Practice <PenTool className="w-5 h-5 ml-2" />
                       </Button>
-                    )
-                  )}
-                </div>
+                    )}
+                  </>
+                )}
               </>
             ) : (
               <>
