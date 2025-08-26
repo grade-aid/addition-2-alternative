@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
-import { CheckCircle, RotateCcw, ArrowRight, Eye, PenTool } from 'lucide-react';
+import { CheckCircle, RotateCcw, ArrowRight, Eye, PenTool, Play, Pause, SkipForward } from 'lucide-react';
 
 interface ColumnAdditionProps {
   className?: string;
@@ -17,6 +17,15 @@ interface Question {
 interface SolvedExample extends Question {
   correctAnswer: string[];
   correctCarries: string[];
+  steps: ExampleStep[];
+}
+
+interface ExampleStep {
+  columnIndex: number;
+  calculation: string;
+  result: string;
+  carry?: string;
+  description: string;
 }
 
 interface UserInputs {
@@ -29,6 +38,10 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   const [phase, setPhase] = useState<'examples' | 'practice'>('examples');
   const [exampleIndex, setExampleIndex] = useState(0);
   const [practiceIndex, setPracticeIndex] = useState(0);
+  
+  // Step-by-step animation for examples
+  const [currentStep, setCurrentStep] = useState(-1);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   
   // Data storage
   const [examples, setExamples] = useState<SolvedExample[]>([]);
@@ -73,17 +86,36 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     
     const answer: string[] = new Array(maxLength + 1).fill('');
     const carries: string[] = new Array(maxLength + 1).fill('');
+    const steps: ExampleStep[] = [];
     
     let carry = 0;
     
-    // Solve from right to left
+    // Solve from right to left and create steps
     for (let i = maxLength - 1; i >= 0; i--) {
       const topDigit = parseInt(paddedTop[i] || '0') || 0;
       const bottomDigit = parseInt(paddedBottom[i] || '0') || 0;
       const sum = topDigit + bottomDigit + carry;
       
-      answer[i] = (sum % 10).toString();
-      carry = Math.floor(sum / 10);
+      const columnNumber = maxLength - i;
+      let calculation = `${topDigit} + ${bottomDigit}`;
+      if (carry > 0) {
+        calculation += ` + ${carry} (carry)`;
+      }
+      calculation += ` = ${sum}`;
+      
+      const result = (sum % 10).toString();
+      const newCarry = Math.floor(sum / 10);
+      
+      steps.push({
+        columnIndex: i,
+        calculation,
+        result,
+        carry: newCarry > 0 ? newCarry.toString() : undefined,
+        description: `Column ${columnNumber}: ${calculation}${newCarry > 0 ? `, carry ${newCarry}` : ''}`
+      });
+      
+      answer[i] = result;
+      carry = newCarry;
       
       // Store carry for next column (to the left)
       if (carry > 0 && i > 0) {
@@ -94,12 +126,19 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     // Handle final carry
     if (carry > 0) {
       answer[maxLength] = carry.toString();
+      steps.push({
+        columnIndex: -1,
+        calculation: `Final carry: ${carry}`,
+        result: carry.toString(),
+        description: `Write the final carry ${carry} in the leftmost position`
+      });
     }
     
     return {
       ...question,
       correctAnswer: answer,
-      correctCarries: carries
+      correctCarries: carries,
+      steps
     };
   }, []);
 
@@ -133,6 +172,8 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   const nextExample = () => {
     if (exampleIndex < examples.length - 1) {
       setExampleIndex(prev => prev + 1);
+      setCurrentStep(-1); // Reset to beginning of new example
+      setIsAutoPlaying(false);
     }
   };
 
@@ -140,6 +181,49 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     setPhase('practice');
     setPracticeIndex(0);
     setIsCorrect(null);
+  };
+
+  // Step-by-step controls for examples
+  const resetSteps = () => {
+    setCurrentStep(-1);
+    setIsAutoPlaying(false);
+  };
+
+  const nextStep = () => {
+    const currentExample = examples[exampleIndex];
+    if (currentExample && currentStep < currentExample.steps.length - 1) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
+  const autoPlay = useCallback(() => {
+    const currentExample = examples[exampleIndex];
+    if (!currentExample || !isAutoPlaying) return;
+
+    if (currentStep < currentExample.steps.length - 1) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      setIsAutoPlaying(false);
+    }
+  }, [examples, exampleIndex, currentStep, isAutoPlaying]);
+
+  // Auto-play timer
+  useEffect(() => {
+    if (isAutoPlaying) {
+      const timer = setTimeout(autoPlay, 2000); // 2 second intervals
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlay, isAutoPlaying]);
+
+  const startAutoPlay = () => {
+    if (currentStep === -1) {
+      setCurrentStep(0);
+    }
+    setIsAutoPlaying(true);
+  };
+
+  const pauseAutoPlay = () => {
+    setIsAutoPlaying(false);
   };
 
   const handleInputChange = (type: 'answer' | 'carries', index: number, value: string) => {
@@ -236,15 +320,51 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
           <div className="flex justify-center gap-4">
             {phase === 'examples' ? (
               <>
-                {exampleIndex < examples.length - 1 ? (
-                  <Button onClick={nextExample} className="grade-button">
-                    Next Example <ArrowRight className="w-5 h-5 ml-2" />
+                <div className="flex gap-2">
+                  {!isAutoPlaying ? (
+                    <Button 
+                      onClick={startAutoPlay} 
+                      className="grade-button"
+                      disabled={currentStep >= (examples[exampleIndex]?.steps.length || 0) - 1}
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      {currentStep === -1 ? 'Start' : 'Play'}
+                    </Button>
+                  ) : (
+                    <Button onClick={pauseAutoPlay} className="grade-button secondary">
+                      <Pause className="w-5 h-5 mr-2" />
+                      Pause
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    onClick={nextStep} 
+                    className="grade-button secondary"
+                    disabled={currentStep >= (examples[exampleIndex]?.steps.length || 0) - 1}
+                  >
+                    <SkipForward className="w-5 h-5 mr-2" />
+                    Next Step
                   </Button>
-                ) : (
-                  <Button onClick={startPractice} className="grade-button accent">
-                    Start Practice <PenTool className="w-5 h-5 ml-2" />
+                  
+                  <Button onClick={resetSteps} className="grade-button secondary">
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Reset
                   </Button>
-                )}
+                </div>
+                
+                <div className="flex gap-2">
+                  {exampleIndex < examples.length - 1 ? (
+                    <Button onClick={nextExample} className="grade-button">
+                      Next Example <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  ) : (
+                    currentStep >= (examples[exampleIndex]?.steps.length || 0) - 1 && (
+                      <Button onClick={startPractice} className="grade-button accent">
+                        Start Practice <PenTool className="w-5 h-5 ml-2" />
+                      </Button>
+                    )
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -268,28 +388,36 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               <div className="flex justify-center">
                 <div className="flex gap-2">
                   <div style={{ width: '48px' }}></div>
-                  {Array.from({ length: maxLength }, (_, i) => (
-                    <div key={`carry-${i}`} className="flex justify-center" style={{ width: '48px' }}>
-                       {phase === 'examples' ? (
-                         // Show solved carries for examples
-                         (currentQuestion as SolvedExample).correctCarries?.[i] && (
-                           <div className="carry-box">
-                             {(currentQuestion as SolvedExample).correctCarries[i]}
-                           </div>
-                         )
-                      ) : (
-                        // Input fields for practice
-                        <Input
-                          type="text"
-                          value={userInputs.carries[i] || ''}
-                          onChange={(e) => handleInputChange('carries', i, e.target.value)}
-                          className="w-8 h-8 text-center text-sm p-1 border-secondary/50 bg-secondary/10"
-                          maxLength={1}
-                          placeholder=""
-                        />
-                      )}
-                    </div>
-                  ))}
+                  {Array.from({ length: maxLength }, (_, i) => {
+                    // For examples, only show carries up to current step
+                    const shouldShowCarry = phase === 'practice' || 
+                      (currentStep >= 0 && (currentQuestion as SolvedExample).steps.some((step, stepIndex) => 
+                        stepIndex <= currentStep && step.columnIndex === i && step.carry
+                      ));
+                    
+                    return (
+                      <div key={`carry-${i}`} className="flex justify-center" style={{ width: '48px' }}>
+                        {phase === 'examples' ? (
+                          // Show solved carries for examples (only if step completed)
+                          shouldShowCarry && (currentQuestion as SolvedExample).correctCarries?.[i] && (
+                            <div className="carry-box animate-fade-in">
+                              {(currentQuestion as SolvedExample).correctCarries[i]}
+                            </div>
+                          )
+                        ) : (
+                          // Input fields for practice
+                          <Input
+                            type="text"
+                            value={userInputs.carries[i] || ''}
+                            onChange={(e) => handleInputChange('carries', i, e.target.value)}
+                            className="w-8 h-8 text-center text-sm p-1 border-secondary/50 bg-secondary/10"
+                            maxLength={1}
+                            placeholder=""
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -297,11 +425,22 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               <div className="flex justify-center">
                 <div className="flex gap-2">
                   <div style={{ width: '48px' }}></div>
-                  {paddedTop.split('').map((digit, index) => (
-                    <div key={`top-${index}`} className="digit-box">
-                      {digit.trim() || ''}
-                    </div>
-                  ))}
+                  {paddedTop.split('').map((digit, index) => {
+                    // Highlight active column in examples
+                    const isActive = phase === 'examples' && currentStep >= 0 && 
+                      (currentQuestion as SolvedExample).steps[currentStep]?.columnIndex === index;
+                    
+                    return (
+                      <div 
+                        key={`top-${index}`} 
+                        className={`digit-box transition-all duration-300 ${
+                          isActive ? 'border-primary bg-primary/10 scale-105 animate-pulse' : ''
+                        }`}
+                      >
+                        {digit.trim() || ''}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -311,11 +450,22 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   <div className="flex items-center justify-center w-12 h-12 text-2xl font-bold">
                     +
                   </div>
-                  {paddedBottom.split('').map((digit, index) => (
-                    <div key={`bottom-${index}`} className="digit-box">
-                      {digit.trim() || ''}
-                    </div>
-                  ))}
+                  {paddedBottom.split('').map((digit, index) => {
+                    // Highlight active column in examples
+                    const isActive = phase === 'examples' && currentStep >= 0 && 
+                      (currentQuestion as SolvedExample).steps[currentStep]?.columnIndex === index;
+                    
+                    return (
+                      <div 
+                        key={`bottom-${index}`} 
+                        className={`digit-box transition-all duration-300 ${
+                          isActive ? 'border-primary bg-primary/10 scale-105 animate-pulse' : ''
+                        }`}
+                      >
+                        {digit.trim() || ''}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -329,8 +479,17 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   <div className="flex justify-center" style={{ width: '48px' }}>
                     {phase === 'examples' ? (
                       <div 
-                        className="digit-box"
-                        style={{ visibility: (currentQuestion as SolvedExample).correctAnswer?.[maxLength] ? 'visible' : 'hidden' }}
+                        className={`digit-box transition-all duration-300 ${
+                          // Show final carry if it's been completed
+                          currentStep >= 0 && (currentQuestion as SolvedExample).steps.some((step, stepIndex) => 
+                            stepIndex <= currentStep && step.columnIndex === -1
+                          ) ? 'animate-scale-in' : ''
+                        }`}
+                        style={{ 
+                          visibility: currentStep >= 0 && (currentQuestion as SolvedExample).steps.some((step, stepIndex) => 
+                            stepIndex <= currentStep && step.columnIndex === -1
+                          ) && (currentQuestion as SolvedExample).correctAnswer?.[maxLength] ? 'visible' : 'hidden' 
+                        }}
                       >
                         {(currentQuestion as SolvedExample).correctAnswer?.[maxLength] || ''}
                       </div>
@@ -348,53 +507,119 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   </div>
                   
                   {/* Main answer positions */}
-                  {Array.from({ length: maxLength }, (_, i) => (
-                    <div key={`answer-${i}`} className="flex justify-center" style={{ width: '48px' }}>
-                       {phase === 'examples' ? (
-                         <div className="digit-box">
-                           {(currentQuestion as SolvedExample).correctAnswer?.[i] || ''}
-                         </div>
-                      ) : (
-                        <Input
-                          type="text"
-                          value={userInputs.answer[i] || ''}
-                          onChange={(e) => handleInputChange('answer', i, e.target.value)}
-                          className="w-12 h-12 text-center font-mono font-bold p-1"
-                          maxLength={1}
-                          placeholder=""
-                        />
-                      )}
-                    </div>
-                  ))}
+                  {Array.from({ length: maxLength }, (_, i) => {
+                    // For examples, only show answers up to current step
+                    const shouldShowAnswer = phase === 'practice' || 
+                      (currentStep >= 0 && (currentQuestion as SolvedExample).steps.some((step, stepIndex) => 
+                        stepIndex <= currentStep && step.columnIndex === i
+                      ));
+                    
+                    return (
+                      <div key={`answer-${i}`} className="flex justify-center" style={{ width: '48px' }}>
+                        {phase === 'examples' ? (
+                          <div 
+                            className={`digit-box transition-all duration-300 ${
+                              shouldShowAnswer ? 'animate-scale-in' : ''
+                            }`}
+                            style={{ 
+                              visibility: shouldShowAnswer ? 'visible' : 'hidden' 
+                            }}
+                          >
+                            {shouldShowAnswer ? (currentQuestion as SolvedExample).correctAnswer?.[i] || '' : ''}
+                          </div>
+                        ) : (
+                          <Input
+                            type="text"
+                            value={userInputs.answer[i] || ''}
+                            onChange={(e) => handleInputChange('answer', i, e.target.value)}
+                            className="w-12 h-12 text-center font-mono font-bold p-1"
+                            maxLength={1}
+                            placeholder=""
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Feedback */}
-              {phase === 'practice' && isCorrect !== null && (
-                <div className={`text-center p-4 rounded-lg font-medium ${
-                  isCorrect 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-red-100 text-red-700'
-                }`}>
-                  {isCorrect ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <CheckCircle className="w-6 h-6" />
-                      Excellent! Your answer is correct! 🎉
+              {/* Step Explanation for Examples */}
+              {phase === 'examples' && currentStep >= 0 && (currentQuestion as SolvedExample).steps[currentStep] && (
+                <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 max-w-md animate-fade-in">
+                  <div className="text-center">
+                    <div className="font-semibold text-accent mb-2">
+                      Step {currentStep + 1}: {(currentQuestion as SolvedExample).steps[currentStep].calculation}
                     </div>
-                  ) : (
-                    <div>
-                      Not quite right. Check your carries and answer digits.
+                    <div className="text-sm text-muted-foreground">
+                      {(currentQuestion as SolvedExample).steps[currentStep].description}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
               {/* Instructions */}
-              {phase === 'examples' && (
+              {phase === 'examples' ? (
                 <div className="text-center text-muted-foreground">
-                  <p>This shows the complete solution with all carries and the final answer.</p>
-                  <p className="text-sm mt-1">Notice how we work from RIGHT ← LEFT, column by column.</p>
+                  {currentStep === -1 ? (
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium">
+                        📚 Watch how to solve column addition step-by-step
+                      </p>
+                      <p className="text-sm">
+                        Click "Start" to see the calculation process from RIGHT ← LEFT
+                      </p>
+                    </div>
+                  ) : currentStep < (examples[exampleIndex]?.steps.length || 0) - 1 ? (
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium text-primary">
+                        👀 Solving step-by-step...
+                      </p>
+                      <p className="text-sm">
+                        Step {currentStep + 1} of {examples[exampleIndex]?.steps.length || 0}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium text-secondary">
+                        ✅ Example complete!
+                      </p>
+                      <p className="text-sm">
+                        {exampleIndex < examples.length - 1 
+                          ? 'Ready for the next example?' 
+                          : 'Ready to practice on your own?'
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                // Practice mode instructions remain the same
+                <>
+                  {/* Feedback */}
+                  {isCorrect !== null && (
+                    <div className={`text-center p-4 rounded-lg font-medium ${
+                      isCorrect 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {isCorrect ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <CheckCircle className="w-6 h-6" />
+                          Excellent! Your answer is correct! 🎉
+                        </div>
+                      ) : (
+                        <div>
+                          Not quite right. Check your carries and answer digits.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="text-center text-muted-foreground">
+                    <p>Fill in the answer and carries for each column</p>
+                    <p className="text-sm mt-1">Work from RIGHT ← LEFT, just like the examples!</p>
+                  </div>
+                </>
               )}
             </div>
           </div>

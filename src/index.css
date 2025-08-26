@@ -178,4 +178,14 @@ All colors MUST be HSL.
     @apply w-8 h-8 border border-secondary/50 rounded-md flex items-center justify-center;
     @apply text-sm font-mono font-medium bg-secondary/10 text-secondary;
   }
+
+  /* Animation utilities */
+  .animate-bounce-gentle {
+    animation: bounce 1s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
 }
