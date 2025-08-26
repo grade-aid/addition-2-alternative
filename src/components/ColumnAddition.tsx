@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { CheckCircle, RotateCcw, ArrowRight, Eye, PenTool, Play, Pause, SkipForward } from 'lucide-react';
+import { PizzaGame } from './PizzaGame';
 
 interface ColumnAdditionProps {
   className?: string;
@@ -35,7 +36,7 @@ interface UserInputs {
 
 export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }) => {
   // Phase management
-  const [phase, setPhase] = useState<'examples' | 'practice'>('examples');
+  const [phase, setPhase] = useState<'examples' | 'practice' | 'pizza-game' | 'earnings-calculation'>('examples');
   const [exampleIndex, setExampleIndex] = useState(0);
   const [practiceIndex, setPracticeIndex] = useState(0);
   
@@ -48,6 +49,12 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   const [practiceQuestions, setPracticeQuestions] = useState<Question[]>([]);
   const [userInputs, setUserInputs] = useState<UserInputs>({ answer: [], carries: [] });
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  
+  // Pizza game tracking
+  const [correctAnswerCount, setCorrectAnswerCount] = useState(0);
+  const [day1Earnings, setDay1Earnings] = useState(0);
+  const [day2Earnings, setDay2Earnings] = useState(0);
+  const [showEarningsCalculation, setShowEarningsCalculation] = useState(false);
 
   // Question generation based on difficulty
   const generateQuestion = useCallback((difficulty: 'easy' | 'medium' | 'hard'): Question => {
@@ -246,7 +253,20 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     const answerCorrect = userInputs.answer.every((val, i) => val === solved.correctAnswer[i]);
     const carriesCorrect = userInputs.carries.every((val, i) => val === solved.correctCarries[i]);
     
-    setIsCorrect(answerCorrect && carriesCorrect);
+    const correct = answerCorrect && carriesCorrect;
+    setIsCorrect(correct);
+    
+    // Track correct answers for pizza game trigger
+    if (correct) {
+      setCorrectAnswerCount(prev => {
+        const newCount = prev + 1;
+        // Trigger pizza game every 2 correct answers
+        if (newCount % 2 === 0 && newCount > 0) {
+          setTimeout(() => setPhase('pizza-game'), 1500);
+        }
+        return newCount;
+      });
+    }
   };
 
   const nextPractice = () => {
@@ -266,8 +286,108 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     }
   };
 
+  const handlePizzaGameComplete = (day1: number, day2: number) => {
+    setDay1Earnings(day1);
+    setDay2Earnings(day2);
+    setPhase('earnings-calculation');
+    setShowEarningsCalculation(true);
+  };
+
+  const handlePizzaGameClose = () => {
+    setPhase('practice');
+  };
+
+  const continuePractice = () => {
+    setPhase('practice');
+    setShowEarningsCalculation(false);
+  };
+
   // Get current question based on phase
   const currentQuestion = phase === 'examples' ? examples[exampleIndex] : practiceQuestions[practiceIndex];
+  
+  // Show pizza game
+  if (phase === 'pizza-game') {
+    return <PizzaGame onComplete={handlePizzaGameComplete} onClose={handlePizzaGameClose} />;
+  }
+
+  // Show earnings calculation
+  if (phase === 'earnings-calculation' && showEarningsCalculation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-4xl p-8">
+          <div className="text-center space-y-8">
+            <h1 className="font-display text-4xl font-bold text-brand-black mb-2">
+              🎉 Restaurant Earnings Calculator
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Let's use column addition to calculate your total earnings!
+            </p>
+
+            {/* Earnings Display */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-8">
+              <Card className="p-6 bg-blue-50 border-blue-200">
+                <h3 className="text-2xl font-bold text-blue-700 mb-4">Day 1 Earnings</h3>
+                <p className="text-4xl font-bold text-blue-800">${day1Earnings}</p>
+              </Card>
+              <Card className="p-6 bg-green-50 border-green-200">
+                <h3 className="text-2xl font-bold text-green-700 mb-4">Day 2 Earnings</h3>
+                <p className="text-4xl font-bold text-green-800">${day2Earnings}</p>
+              </Card>
+            </div>
+
+            {/* Column Addition Calculation */}
+            <div className="bg-white rounded-3xl p-8 border-4 border-brand-black/10">
+              <h3 className="text-2xl font-bold mb-6">Calculate Total Earnings:</h3>
+              
+              <div className="flex flex-col items-center space-y-6">
+                {/* Show the calculation using column addition method */}
+                <div className="flex justify-center">
+                  <div className="flex gap-4 text-3xl font-mono">
+                    <div className="text-right" style={{ width: '100px' }}>
+                      ${day1Earnings}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center">
+                  <div className="flex gap-4 text-3xl font-mono">
+                    <div className="text-2xl font-bold">+</div>
+                    <div className="text-right" style={{ width: '100px' }}>
+                      ${day2Earnings}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="w-full max-w-sm h-1 bg-brand-black/20 rounded-full"></div>
+                
+                <div className="flex justify-center">
+                  <div className="flex gap-4 text-4xl font-mono font-bold text-green-600">
+                    <div className="text-right" style={{ width: '100px' }}>
+                      ${day1Earnings + day2Earnings}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 p-6 bg-green-100 rounded-2xl">
+                <h4 className="text-xl font-bold text-green-700 mb-2">Congratulations! 🎉</h4>
+                <p className="text-lg text-green-600">
+                  You earned a total of <strong>${day1Earnings + day2Earnings}</strong> from your pizza restaurant!
+                </p>
+                <p className="text-sm text-green-600 mt-2">
+                  This is exactly how we use column addition in real life - to add up earnings, expenses, and more!
+                </p>
+              </div>
+            </div>
+
+            <Button onClick={continuePractice} className="grade-button accent text-lg px-8 py-4">
+              Continue Practice <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
   
   if (!currentQuestion) return null;
 
