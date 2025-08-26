@@ -398,8 +398,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
   const totalAttemptsToday = currentDay === 1 ? day1Attempts : day2Attempts;
 
-  // Timer effect
+  // Timer effect - Fixed dependencies to include currentDay
   useEffect(() => {
+    console.log('Timer effect triggered:', { isTimerActive, timeLeft, currentDay });
     if (isTimerActive && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
@@ -435,39 +436,64 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       
       return () => clearInterval(timer);
     }
-  }, [isTimerActive]); // Remove timeLeft from dependencies to prevent constant re-creation
+  }, [isTimerActive, currentDay]); // Added currentDay to dependencies
 
-  // Start timer when new order appears
+  // Start timer when new order appears - Enhanced with debug logging
   useEffect(() => {
+    console.log('Order change effect:', { currentOrder: currentOrder?.id, gameStarted, currentDay, currentOrderIndex });
     if (currentOrder && gameStarted) {
+      console.log('Starting timer for Day', currentDay, 'Order', currentOrder.id);
       setTimeLeft(15);
       setIsTimerActive(true);
       setCustomerMood('😊');
     }
-  }, [currentOrderIndex, gameStarted]);
+  }, [currentOrderIndex, gameStarted, currentDay]);
 
   const nextOrder = () => {
+    console.log('nextOrder called:', { currentDay, totalAttemptsToday, day1Attempts, day2Attempts });
     // Check if day is complete (5 total attempts)
     if (totalAttemptsToday >= 5) {
       if (currentDay === 1) {
+        console.log('Day 1 complete, transitioning to Day 2');
         setCurrentDay(2);
         setCurrentOrderIndex(5);
         setSelectedIngredients([]);
+        // Explicit timer reset for Day 2
+        setTimeLeft(15);
+        setIsTimerActive(false); // Will be reactivated by the order change effect
       } else {
         // Game completed - show celebration before calling onComplete
+        console.log('Day 2 complete, finishing game');
         setGameCompleted(true);
         setTimeout(() => {
           // Save incremented game count to localStorage
           const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
           localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+          console.log('Calling onComplete with earnings:', { day1Earnings, day2Earnings });
           onComplete(day1Earnings, day2Earnings);
         }, 4000); // Show celebration for 4 seconds
       }
     } else {
+      console.log('Moving to next order:', currentOrderIndex + 1);
       setCurrentOrderIndex(prev => prev + 1);
       setSelectedIngredients([]);
     }
   };
+
+  // Add a separate effect to ensure Day 2 completion is properly detected
+  useEffect(() => {
+    console.log('Day 2 completion check:', { currentDay, day2Attempts, gameCompleted });
+    if (currentDay === 2 && day2Attempts >= 5 && !gameCompleted) {
+      console.log('Day 2 should be complete, triggering completion');
+      setGameCompleted(true);
+      setTimeout(() => {
+        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        console.log('Calling onComplete from completion effect:', { day1Earnings, day2Earnings });
+        onComplete(day1Earnings, day2Earnings);
+      }, 4000);
+    }
+  }, [currentDay, day2Attempts, gameCompleted, day1Earnings, day2Earnings, onComplete]);
 
   // Initialize Three.js scene
   useEffect(() => {
