@@ -126,8 +126,9 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
             <div className="flex justify-center gap-4">
               <Button 
                 onClick={startCalculation}
-                className="grade-button"
+                className={`grade-button ${!topNumber || !bottomNumber ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={!topNumber || !bottomNumber}
+                title={!topNumber || !bottomNumber ? 'Please enter numbers in both fields' : 'Click to start calculation'}
               >
                 Start Calculation
               </Button>
@@ -140,6 +141,15 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 Reset
               </Button>
             </div>
+            
+            {/* Helper text */}
+            {(!topNumber || !bottomNumber) && (
+              <div className="text-center">
+                <p className="text-lg text-secondary font-medium">
+                  📝 Please enter numbers in both fields above to start!
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Calculation Area */}
