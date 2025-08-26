@@ -476,30 +476,39 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       totalAttemptsToday, 
       currentOrderIndex,
       day1Attempts,
-      day2Attempts 
+      day2Attempts,
+      'day1Complete': day1Attempts >= 5,
+      'day2Complete': day2Attempts >= 5
     });
     
-    // Check if day is complete (5 total attempts)
-    if (totalAttemptsToday >= 5) {
-      if (currentDay === 1) {
-        console.log('Moving from day 1 to day 2');
-        setCurrentDay(2);
-        setCurrentOrderIndex(5);
-        setSelectedIngredients([]);
-      } else {
-        console.log('Game completed');
-        // Game completed - show celebration before calling onComplete
-        setGameCompleted(true);
-        setTimeout(() => {
-          // Save incremented game count to localStorage
-          const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-          localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
-          onComplete(day1Earnings, day2Earnings);
-        }, 4000); // Show celebration for 4 seconds
-      }
+    // Check if current day is complete (5 total attempts)
+    if (currentDay === 1 && day1Attempts >= 5) {
+      console.log('Day 1 completed, transitioning to Day 2');
+      setCurrentDay(2);
+      setCurrentOrderIndex(5); // Start Day 2 orders (index 5-9)
+      setSelectedIngredients([]);
+      // day2Attempts should already be 0, but let's ensure it
+      console.log('Day 2 starting with day2Attempts:', day2Attempts);
+    } else if (currentDay === 2 && day2Attempts >= 5) {
+      console.log('Day 2 completed, ending game');
+      // Game completed - show celebration before calling onComplete
+      setGameCompleted(true);
+      setTimeout(() => {
+        // Save incremented game count to localStorage
+        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        onComplete(day1Earnings, day2Earnings);
+      }, 4000); // Show celebration for 4 seconds
     } else {
-      console.log('Moving to next order');
-      setCurrentOrderIndex(prev => prev + 1);
+      console.log('Moving to next order within current day');
+      // Stay within current day, move to next order
+      if (currentDay === 1) {
+        // Day 1: orders 0-4
+        setCurrentOrderIndex(prev => Math.min(prev + 1, 4));
+      } else {
+        // Day 2: orders 5-9
+        setCurrentOrderIndex(prev => Math.min(prev + 1, 9));
+      }
       setSelectedIngredients([]);
     }
   };
