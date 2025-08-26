@@ -81,8 +81,9 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   const startCalculation = useCallback(() => {
     if (!currentQuestion) return;
     
-    // Start from LEFT (index 0) instead of right
-    setActiveColumn(0);
+    const maxLength = Math.max(currentQuestion.topNumber.length, currentQuestion.bottomNumber.length);
+    // Start from RIGHT (rightmost column) - traditional method
+    setActiveColumn(maxLength - 1);
   }, [currentQuestion]);
 
   const resetCalculation = useCallback(() => {
@@ -96,7 +97,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     setIsComplete(false);
   }, [currentQuestion]);
 
-  // LEFT-TO-RIGHT calculation logic
+  // RIGHT-TO-LEFT calculation logic (traditional method)
   const calculateColumn = useCallback((columnIndex: number) => {
     if (!currentQuestion) return;
     
@@ -118,9 +119,10 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     const newCarries = [...carries];
     
     newAnswer[columnIndex] = digit.toString();
-    if (carry > 0 && columnIndex < maxLength - 1) {
-      newCarries[columnIndex + 1] = carry.toString();
-    } else if (carry > 0) {
+    // Carry goes to the LEFT (lower index) - traditional method
+    if (carry > 0 && columnIndex > 0) {
+      newCarries[columnIndex - 1] = carry.toString();
+    } else if (carry > 0 && columnIndex === 0) {
       // Final carry goes to the leftmost position
       newAnswer[maxLength] = carry.toString();
     }
@@ -128,9 +130,9 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     setAnswer(newAnswer);
     setCarries(newCarries);
 
-    // Move to next column (LEFT to RIGHT)
-    if (columnIndex < maxLength - 1) {
-      setActiveColumn(columnIndex + 1);
+    // Move to next column (RIGHT to LEFT - decrement index)
+    if (columnIndex > 0) {
+      setActiveColumn(columnIndex - 1);
       setCurrentStep(prev => prev + 1);
     } else {
       setActiveColumn(-1);
@@ -177,7 +179,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               </span>
             </div>
             <p className="text-lg text-muted-foreground mt-2">
-              Solve LEFT to RIGHT • Click each column to calculate
+              Solve RIGHT to LEFT • Click each column to calculate
             </p>
           </div>
 
@@ -287,10 +289,10 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 {activeColumn >= 0 && (
                   <div className="space-y-2">
                     <p className="text-lg font-medium text-primary animate-bounce-gentle">
-                      👈 Click the LEFTMOST highlighted column to calculate: Column {activeColumn + 1}
+                      👉 Click the RIGHTMOST highlighted column to calculate: Column {maxLength - activeColumn}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Solving LEFT → RIGHT (Column 1, 2, 3...)
+                      Solving RIGHT ← LEFT (Column 1, 2, 3...)
                     </p>
                   </div>
                 )}
@@ -303,10 +305,10 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 {activeColumn === -1 && !isComplete && (
                   <div className="space-y-2">
                     <p className="text-lg font-medium text-muted-foreground">
-                      Click "Start Solving" to begin from the LEFT!
+                      Click "Start Solving" to begin from the RIGHT!
                     </p>
                     <p className="text-sm text-accent font-medium">
-                      ← We solve LEFT to RIGHT (not the traditional way) →
+                      → We solve RIGHT to LEFT (traditional way) ←
                     </p>
                   </div>
                 )}
@@ -322,7 +324,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   <div 
                     key={`progress-${i}`}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      currentStep > i ? 'bg-secondary' : 'bg-border-gray'
+                      currentStep > (maxLength - 1 - i) ? 'bg-secondary' : 'bg-border-gray'
                     }`}
                   />
                 ))}
