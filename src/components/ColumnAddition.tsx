@@ -217,7 +217,10 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               {/* Carry Row */}
               <div className="flex justify-center">
                 <div className="flex gap-2">
-                  {Array.from({ length: maxLength + 1 }, (_, i) => (
+                  {/* Extra space for final carry position */}
+                  <div style={{ width: '48px' }}></div>
+                  {/* Carry positions aligned with digit columns */}
+                  {Array.from({ length: maxLength }, (_, i) => (
                     <div key={`carry-${i}`} className="flex justify-center" style={{ width: '48px' }}>
                       {carries[i] && (
                         <div className="carry-box">
