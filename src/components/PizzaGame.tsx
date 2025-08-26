@@ -404,13 +404,14 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           else setCustomerMood('😠');
           
           if (newTime <= 0) {
-            // Order failed
-            setOrderFailed(true);
+            // Order failed - clear timer and move to next pizza
             setIsTimerActive(false);
+            setOrderFailed(true);
             setTimeout(() => {
               setOrderFailed(false);
               nextOrder();
             }, 2000);
+            return 0; // Ensure we return 0 to stop the timer
           }
           
           return newTime;
@@ -419,7 +420,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       
       return () => clearInterval(timer);
     }
-  }, [isTimerActive, timeLeft]);
+  }, [isTimerActive]); // Remove timeLeft from dependencies to prevent constant re-creation
 
   // Start timer when new order appears
   useEffect(() => {
