@@ -520,51 +520,25 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 </div>
               </div>
 
-              {/* Step Explanation for Examples */}
-              {phase === 'examples' && currentStep >= 0 && (currentQuestion as SolvedExample).steps[currentStep] && (
-                <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 max-w-md animate-fade-in">
-                  <div className="text-center">
-                    <div className="font-semibold text-accent mb-2">
-                      Step {currentStep + 1}: {(currentQuestion as SolvedExample).steps[currentStep].calculation}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {(currentQuestion as SolvedExample).steps[currentStep].description}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Instructions */}
               {phase === 'examples' ? (
                 <div className="text-center text-muted-foreground">
                   {currentStep === -1 ? (
                     <div className="space-y-2">
                       <p className="text-lg font-medium">
-                        📚 Watch how to solve column addition step-by-step
-                      </p>
-                      <p className="text-sm">
-                        Click "Start" to see the calculation process from RIGHT ← LEFT
+                        📚 Watch the step-by-step solution
                       </p>
                     </div>
                   ) : currentStep < (examples[exampleIndex]?.steps.length || 0) - 1 ? (
                     <div className="space-y-2">
                       <p className="text-lg font-medium text-primary">
-                        👀 Solving step-by-step...
-                      </p>
-                      <p className="text-sm">
-                        Step {currentStep + 1} of {examples[exampleIndex]?.steps.length || 0}
+                        👀 Solving...
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <p className="text-lg font-medium text-secondary">
-                        ✅ Example complete!
-                      </p>
-                      <p className="text-sm">
-                        {exampleIndex < examples.length - 1 
-                          ? 'Ready for the next example?' 
-                          : 'Ready to practice on your own?'
-                        }
+                        ✅ Complete!
                       </p>
                     </div>
                   )}
@@ -591,11 +565,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                       )}
                     </div>
                   )}
-
-                  <div className="text-center text-muted-foreground">
-                    <p>Fill in the answer and carries for each column</p>
-                    <p className="text-sm mt-1">Work from RIGHT ← LEFT, just like the examples!</p>
-                  </div>
                 </>
               )}
             </div>
