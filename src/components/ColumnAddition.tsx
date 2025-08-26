@@ -485,15 +485,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   <Button onClick={checkEarningsAnswer} className="grade-button primary">
                     Check Answer
                   </Button>
-                  <Button onClick={() => {
-                    const total = day1Earnings + day2Earnings;
-                    const totalStr = total.toString();
-                    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1;
-                    const paddedAnswer = totalStr.padStart(maxLength, '').split('');
-                    setUserInputs(prev => ({ ...prev, answer: paddedAnswer }));
-                  }} className="grade-button accent">
-                    Show Answer
-                  </Button>
                 </div>
                 
                 {/* Feedback */}

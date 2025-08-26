@@ -368,7 +368,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   
   // Visual feedback states
   const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
-  const [gameCompleted, setGameCompleted] = useState(false);
   
   // Price multiplier system
   const [priceMultiplier, setPriceMultiplier] = useState(1);
@@ -462,16 +461,13 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setTimeLeft(15);
         setIsTimerActive(false); // Will be reactivated by the order change effect
       } else {
-        // Game completed - show celebration before calling onComplete
+        // Game completed - immediately call onComplete
         console.log('Day 2 complete, finishing game');
-        setGameCompleted(true);
-        setTimeout(() => {
-          // Save incremented game count to localStorage
-          const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-          localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
-          console.log('Calling onComplete with earnings:', { day1Earnings, day2Earnings });
-          onComplete(day1Earnings, day2Earnings);
-        }, 4000); // Show celebration for 4 seconds
+        // Save incremented game count to localStorage
+        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        console.log('Calling onComplete with earnings:', { day1Earnings, day2Earnings });
+        onComplete(day1Earnings, day2Earnings);
       }
     } else {
       console.log('Moving to next order:', currentOrderIndex + 1);
@@ -480,20 +476,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     }
   };
 
-  // Add a separate effect to ensure Day 2 completion is properly detected
-  useEffect(() => {
-    console.log('Day 2 completion check:', { currentDay, day2Attempts, gameCompleted });
-    if (currentDay === 2 && day2Attempts >= 5 && !gameCompleted) {
-      console.log('Day 2 should be complete, triggering completion');
-      setGameCompleted(true);
-      setTimeout(() => {
-        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
-        console.log('Calling onComplete from completion effect:', { day1Earnings, day2Earnings });
-        onComplete(day1Earnings, day2Earnings);
-      }, 4000);
-    }
-  }, [currentDay, day2Attempts, gameCompleted, day1Earnings, day2Earnings, onComplete]);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -666,61 +648,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           </div>
         )}
 
-        {gameCompleted && (
-          <div className="fixed inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-green-500 flex items-center justify-center z-50">
-            <div className="bg-white p-12 rounded-3xl text-center animate-scale-in max-w-md mx-4">
-              <div className="text-8xl mb-6 animate-pulse">🎉</div>
-              <div className="text-4xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text mb-4">
-                Congratulations!
-              </div>
-              <div className="text-xl text-gray-700 mb-6">
-                You've completed both days!
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">☀️</span>
-                    <span className="font-semibold">Day 1</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-600 text-xl">${day1Earnings}</div>
-                    <div className="text-sm text-gray-600">{pizzasSoldDay1}/5 pizzas</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🌙</span>
-                    <span className="font-semibold">Day 2</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-600 text-xl">${day2Earnings}</div>
-                    <div className="text-sm text-gray-600">{pizzasSoldDay2}/5 pizzas</div>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border-2 border-green-300">
-                  <div className="text-sm text-gray-600 mb-1">Total Earnings</div>
-                  <div className="font-bold text-3xl text-green-600">
-                    ${day1Earnings + day2Earnings}
-                  </div>
-                  {priceMultiplier > 1 && (
-                    <div className="text-sm text-orange-600 mt-1">
-                      With {priceMultiplier}x multiplier bonus!
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex gap-2 justify-center">
-                <span className="text-2xl animate-pulse">🍕</span>
-                <span className="text-2xl animate-pulse" style={{animationDelay: '0.2s'}}>👨‍🍳</span>
-                <span className="text-2xl animate-pulse" style={{animationDelay: '0.4s'}}>⭐</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 3D Pizza Viewer with Timer */}
