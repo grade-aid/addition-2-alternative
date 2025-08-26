@@ -1,6 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { ArrowRight, RotateCcw, CheckCircle } from 'lucide-react';
@@ -32,249 +30,294 @@ const INGREDIENTS: Ingredient[] = [
   { id: 'onion', name: 'Red Onions', price: 1, emoji: '🧅', color: '#9370DB', shape: 'onion' }
 ];
 
-// Pizza Plate Component
-function PizzaPlate() {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
-      <cylinderGeometry args={[5, 5, 0.1, 32]} />
-      <meshPhongMaterial color="#8B4513" />
-    </mesh>
-  );
-}
+class PizzaScene {
+  private scene: THREE.Scene;
+  private camera: THREE.PerspectiveCamera;
+  private renderer: THREE.WebGLRenderer;
+  private pizzaGroup: THREE.Group;
+  private ingredientMeshes: Map<string, THREE.Mesh[]> = new Map();
+  private animationId: number | null = null;
 
-// Pizza Base Component
-function PizzaBase() {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      <cylinderGeometry args={[4, 4, 0.2, 32]} />
-      <meshPhongMaterial color="#D4A574" />
-      {/* Crust edge - slightly raised rim */}
-      <mesh position={[0, 0.05, 0]}>
-        <cylinderGeometry args={[4, 3.8, 0.1, 32]} />
-        <meshPhongMaterial color="#C19660" />
-      </mesh>
-    </mesh>
-  );
-}
+  constructor(canvas: HTMLCanvasElement) {
+    // Scene setup
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+    
+    // Camera setup
+    this.camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    this.camera.position.set(5, 8, 5);
+    this.camera.lookAt(0, 0, 0);
+    
+    // Renderer setup
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Lighting setup
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+    this.scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 10, 5);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    this.scene.add(directionalLight);
+    
+    // Create pizza group
+    this.pizzaGroup = new THREE.Group();
+    this.scene.add(this.pizzaGroup);
+    
+    // Create pizza base components
+    this.createPizzaBase();
+    
+    // Start animation loop
+    this.animate();
+  }
 
-// Ingredient Components
-function Sauce() {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-      <cylinderGeometry args={[3.5, 3.5, 0.02, 32]} />
-      <meshPhongMaterial color="#C73E1A" />
-    </mesh>
-  );
-}
+  private createPizzaBase() {
+    // Pizza plate (brown wooden plate)
+    const plateGeometry = new THREE.CylinderGeometry(5, 5, 0.1, 32);
+    const plateMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+    const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+    plate.position.y = -0.05;
+    plate.receiveShadow = true;
+    this.pizzaGroup.add(plate);
+    
+    // Pizza dough base
+    const baseGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 32);
+    const baseMaterial = new THREE.MeshPhongMaterial({ color: 0xD4A574 });
+    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+    base.position.y = 0;
+    base.castShadow = true;
+    base.receiveShadow = true;
+    this.pizzaGroup.add(base);
+    
+    // Pizza crust edge
+    const crustGeometry = new THREE.TorusGeometry(4, 0.2, 8, 16);
+    const crustMaterial = new THREE.MeshPhongMaterial({ color: 0xC19660 });
+    const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+    crust.position.y = 0.1;
+    crust.castShadow = true;
+    this.pizzaGroup.add(crust);
+  }
 
-function Cheese() {
-  const positions = useMemo(() => 
-    Array.from({ length: 18 }, () => {
+  private generateRandomPositions(count: number, maxRadius: number = 2.8) {
+    const positions = [];
+    for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8; // Stay within pizza bounds
-      return {
+      const radius = Math.random() * maxRadius;
+      positions.push({
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
         rotation: Math.random() * Math.PI * 2
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.04, pos.z]} rotation={[0, pos.rotation, 0]}>
-          <boxGeometry args={[0.8, 0.1, 0.6]} />
-          <meshPhongMaterial color="#FFF8DC" />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function Pepperoni() {
-  const positions = useMemo(() => 
-    Array.from({ length: 10 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8; // Stay within pizza bounds
-      return {
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        rotation: Math.random() * Math.PI * 2
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[-Math.PI / 2, 0, pos.rotation]}>
-          <cylinderGeometry args={[0.4, 0.4, 0.03, 16]} />
-          <meshPhongMaterial color="#B22222" />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function Mushrooms() {
-  const positions = useMemo(() => 
-    Array.from({ length: 8 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8;
-      return {
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        rotation: Math.random() * Math.PI * 2
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]}>
-          <boxGeometry args={[0.5, 0.08, 0.3]} />
-          <meshPhongMaterial color="#D2B48C" />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function Peppers() {
-  const positions = useMemo(() => 
-    Array.from({ length: 10 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8;
-      return {
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        rotation: Math.random() * Math.PI * 2,
-        color: Math.random() > 0.5 ? "#228B22" : "#DC143C"
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]}>
-          <boxGeometry args={[0.8, 0.06, 0.2]} />
-          <meshPhongMaterial color={pos.color} />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function Olives() {
-  const positions = useMemo(() => 
-    Array.from({ length: 8 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8;
-      return {
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        rotation: Math.random() * Math.PI * 2
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[Math.PI / 2, 0, pos.rotation]}>
-          <torusGeometry args={[0.2, 0.08, 8, 16]} />
-          <meshPhongMaterial color="#2F2F2F" />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function Sausage() {
-  const positions = useMemo(() => 
-    Array.from({ length: 14 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8;
-      return {
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        rotation: Math.random() * Math.PI * 2,
-        scale: 0.15 + Math.random() * 0.15
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]} scale={pos.scale}>
-          <sphereGeometry args={[0.3, 8, 8]} />
-          <meshPhongMaterial color="#8B4513" />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function Onions() {
-  const positions = useMemo(() => 
-    Array.from({ length: 8 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 2.8;
-      return {
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        rotation: Math.random() * Math.PI * 2
-      };
-    }), []
-  );
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]}>
-          <boxGeometry args={[0.7, 0.03, 0.15]} />
-          <meshPhongMaterial color="#9370DB" transparent opacity={0.8} />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-// Rotating Pizza Container
-function RotatingPizza({ selectedIngredients }: { selectedIngredients: string[] }) {
-  const pizzaRef = useRef<THREE.Group>();
-
-  useFrame(() => {
-    if (pizzaRef.current) {
-      pizzaRef.current.rotation.y += 0.008; // Slow rotation
+      });
     }
-  });
+    return positions;
+  }
 
-  const renderIngredient = (ingredientId: string) => {
-    switch (ingredientId) {
-      case 'sauce': return <Sauce key="sauce" />;
-      case 'cheese': return <Cheese key="cheese" />;
-      case 'pepperoni': return <Pepperoni key="pepperoni" />;
-      case 'mushroom': return <Mushrooms key="mushrooms" />;
-      case 'pepper': return <Peppers key="peppers" />;
-      case 'olive': return <Olives key="olives" />;
-      case 'sausage': return <Sausage key="sausage" />;
-      case 'onion': return <Onions key="onions" />;
-      default: return null;
+  private createSauce() {
+    const sauceGeometry = new THREE.CylinderGeometry(3.5, 3.5, 0.02, 32);
+    const sauceMaterial = new THREE.MeshPhongMaterial({ color: 0xC73E1A });
+    const sauce = new THREE.Mesh(sauceGeometry, sauceMaterial);
+    sauce.position.y = 0.11; // On top of pizza base
+    sauce.castShadow = true;
+    return [sauce];
+  }
+
+  private createCheese() {
+    const positions = this.generateRandomPositions(18);
+    const cheeseMeshes = [];
+    
+    for (const pos of positions) {
+      const cheeseGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.6);
+      const cheeseMaterial = new THREE.MeshPhongMaterial({ color: 0xFFF8DC });
+      const cheese = new THREE.Mesh(cheeseGeometry, cheeseMaterial);
+      cheese.position.set(pos.x, 0.13, pos.z); // On top of sauce
+      cheese.rotation.y = pos.rotation;
+      cheese.castShadow = true;
+      cheeseMeshes.push(cheese);
     }
-  };
+    
+    return cheeseMeshes;
+  }
 
-  return (
-    <group ref={pizzaRef}>
-      <PizzaPlate />
-      <PizzaBase />
-      {selectedIngredients.map(renderIngredient)}
-    </group>
-  );
+  private createPepperoni() {
+    const positions = this.generateRandomPositions(10);
+    const pepperoniMeshes = [];
+    
+    for (const pos of positions) {
+      const pepperoniGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.03, 16);
+      const pepperoniMaterial = new THREE.MeshPhongMaterial({ color: 0xB22222 });
+      const pepperoni = new THREE.Mesh(pepperoniGeometry, pepperoniMaterial);
+      pepperoni.position.set(pos.x, 0.15, pos.z); // On top of cheese
+      pepperoni.rotation.y = pos.rotation;
+      pepperoni.castShadow = true;
+      pepperoniMeshes.push(pepperoni);
+    }
+    
+    return pepperoniMeshes;
+  }
+
+  private createMushrooms() {
+    const positions = this.generateRandomPositions(8);
+    const mushroomMeshes = [];
+    
+    for (const pos of positions) {
+      const mushroomGeometry = new THREE.BoxGeometry(0.5, 0.08, 0.3);
+      const mushroomMaterial = new THREE.MeshPhongMaterial({ color: 0xD2B48C });
+      const mushroom = new THREE.Mesh(mushroomGeometry, mushroomMaterial);
+      mushroom.position.set(pos.x, 0.15, pos.z);
+      mushroom.rotation.y = pos.rotation;
+      mushroom.castShadow = true;
+      mushroomMeshes.push(mushroom);
+    }
+    
+    return mushroomMeshes;
+  }
+
+  private createPeppers() {
+    const positions = this.generateRandomPositions(10);
+    const pepperMeshes = [];
+    
+    for (const pos of positions) {
+      const pepperGeometry = new THREE.BoxGeometry(0.8, 0.06, 0.2);
+      const color = Math.random() > 0.5 ? 0x228B22 : 0xDC143C;
+      const pepperMaterial = new THREE.MeshPhongMaterial({ color });
+      const pepper = new THREE.Mesh(pepperGeometry, pepperMaterial);
+      pepper.position.set(pos.x, 0.15, pos.z);
+      pepper.rotation.y = pos.rotation;
+      pepper.castShadow = true;
+      pepperMeshes.push(pepper);
+    }
+    
+    return pepperMeshes;
+  }
+
+  private createOlives() {
+    const positions = this.generateRandomPositions(8);
+    const oliveMeshes = [];
+    
+    for (const pos of positions) {
+      const oliveGeometry = new THREE.TorusGeometry(0.2, 0.08, 8, 16);
+      const oliveMaterial = new THREE.MeshPhongMaterial({ color: 0x2F2F2F });
+      const olive = new THREE.Mesh(oliveGeometry, oliveMaterial);
+      olive.position.set(pos.x, 0.15, pos.z);
+      olive.rotation.x = Math.PI / 2;
+      olive.rotation.z = pos.rotation;
+      olive.castShadow = true;
+      oliveMeshes.push(olive);
+    }
+    
+    return oliveMeshes;
+  }
+
+  private createSausage() {
+    const positions = this.generateRandomPositions(14);
+    const sausageMeshes = [];
+    
+    for (const pos of positions) {
+      const sausageGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+      const sausageMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+      const sausage = new THREE.Mesh(sausageGeometry, sausageMaterial);
+      const scale = 0.15 + Math.random() * 0.15;
+      sausage.position.set(pos.x, 0.15, pos.z);
+      sausage.scale.setScalar(scale);
+      sausage.castShadow = true;
+      sausageMeshes.push(sausage);
+    }
+    
+    return sausageMeshes;
+  }
+
+  private createOnions() {
+    const positions = this.generateRandomPositions(8);
+    const onionMeshes = [];
+    
+    for (const pos of positions) {
+      const onionGeometry = new THREE.BoxGeometry(0.7, 0.03, 0.15);
+      const onionMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x9370DB, 
+        transparent: true, 
+        opacity: 0.8 
+      });
+      const onion = new THREE.Mesh(onionGeometry, onionMaterial);
+      onion.position.set(pos.x, 0.15, pos.z);
+      onion.rotation.y = pos.rotation;
+      onion.castShadow = true;
+      onionMeshes.push(onion);
+    }
+    
+    return onionMeshes;
+  }
+
+  public updateIngredients(selectedIngredients: string[]) {
+    // Clear existing ingredient meshes
+    this.ingredientMeshes.forEach((meshes) => {
+      meshes.forEach(mesh => this.pizzaGroup.remove(mesh));
+    });
+    this.ingredientMeshes.clear();
+    
+    // Add selected ingredients
+    selectedIngredients.forEach(ingredientId => {
+      let meshes: THREE.Mesh[] = [];
+      
+      switch (ingredientId) {
+        case 'sauce':
+          meshes = this.createSauce();
+          break;
+        case 'cheese':
+          meshes = this.createCheese();
+          break;
+        case 'pepperoni':
+          meshes = this.createPepperoni();
+          break;
+        case 'mushroom':
+          meshes = this.createMushrooms();
+          break;
+        case 'pepper':
+          meshes = this.createPeppers();
+          break;
+        case 'olive':
+          meshes = this.createOlives();
+          break;
+        case 'sausage':
+          meshes = this.createSausage();
+          break;
+        case 'onion':
+          meshes = this.createOnions();
+          break;
+      }
+      
+      if (meshes.length > 0) {
+        this.ingredientMeshes.set(ingredientId, meshes);
+        meshes.forEach(mesh => this.pizzaGroup.add(mesh));
+      }
+    });
+  }
+
+  private animate = () => {
+    this.animationId = requestAnimationFrame(this.animate);
+    
+    // Slow rotation of the pizza
+    this.pizzaGroup.rotation.y += 0.008;
+    
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  public handleResize(width: number, height: number) {
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+  }
+
+  public dispose() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
+    this.renderer.dispose();
+  }
 }
 
 interface PizzaGameProps {
@@ -283,6 +326,9 @@ interface PizzaGameProps {
 }
 
 export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sceneRef = useRef<PizzaScene | null>(null);
+  
   const [currentDay, setCurrentDay] = useState(1);
   const [pizzasSoldDay1, setPizzasSoldDay1] = useState(0);
   const [pizzasSoldDay2, setPizzasSoldDay2] = useState(0);
@@ -309,6 +355,40 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
   const currentOrder = orders[currentOrderIndex];
   const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
+
+  // Initialize Three.js scene
+  useEffect(() => {
+    if (canvasRef.current && !sceneRef.current) {
+      sceneRef.current = new PizzaScene(canvasRef.current);
+    }
+    
+    return () => {
+      if (sceneRef.current) {
+        sceneRef.current.dispose();
+        sceneRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update ingredients when selection changes
+  useEffect(() => {
+    if (sceneRef.current) {
+      sceneRef.current.updateIngredients(selectedIngredients);
+    }
+  }, [selectedIngredients]);
+
+  // Handle canvas resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current && sceneRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        sceneRef.current.handleResize(rect.width, rect.height);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleIngredient = (ingredientId: string) => {
     setSelectedIngredients(prev => 
@@ -392,12 +472,11 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 3D Pizza Viewer */}
           <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4">
-            <Canvas camera={{ position: [5, 8, 5], fov: 50 }}>
-              <ambientLight intensity={0.4} />
-              <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
-              <RotatingPizza selectedIngredients={selectedIngredients} />
-              <OrbitControls enablePan={false} enableZoom={false} />
-            </Canvas>
+            <canvas 
+              ref={canvasRef}
+              className="w-full h-96 rounded-xl"
+              style={{ display: 'block' }}
+            />
           </div>
 
           {/* Game Controls */}
