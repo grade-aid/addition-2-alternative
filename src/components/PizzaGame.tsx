@@ -436,6 +436,8 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setCurrentDay(2);
         setCurrentOrderIndex(5);
         setSelectedIngredients([]);
+        // Reset auto-complete uses for day 2
+        setAutoCompleteUses(3);
       } else {
         // Save incremented game count to localStorage
         const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
