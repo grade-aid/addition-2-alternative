@@ -369,6 +369,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   
   // Visual feedback states
   const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
+  const [gameCompleted, setGameCompleted] = useState(false);
   
   // Price multiplier system
   const [priceMultiplier, setPriceMultiplier] = useState(1);
@@ -456,10 +457,14 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         // Reset auto-complete uses for day 2
         setAutoCompleteUses(3);
       } else {
-        // Save incremented game count to localStorage
-        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
-        onComplete(day1Earnings, day2Earnings);
+        // Game completed - show celebration before calling onComplete
+        setGameCompleted(true);
+        setTimeout(() => {
+          // Save incremented game count to localStorage
+          const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+          localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+          onComplete(day1Earnings, day2Earnings);
+        }, 4000); // Show celebration for 4 seconds
       }
     } else {
       setCurrentOrderIndex(prev => prev + 1);
@@ -639,6 +644,62 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             <div className="bg-white p-8 rounded-3xl text-center animate-scale-in">
               <div className="text-6xl mb-4">❌</div>
               <div className="text-2xl font-bold text-red-600">Time's Up!</div>
+            </div>
+          </div>
+        )}
+
+        {gameCompleted && (
+          <div className="fixed inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-green-500 flex items-center justify-center z-50">
+            <div className="bg-white p-12 rounded-3xl text-center animate-scale-in max-w-md mx-4">
+              <div className="text-8xl mb-6 animate-pulse">🎉</div>
+              <div className="text-4xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text mb-4">
+                Congratulations!
+              </div>
+              <div className="text-xl text-gray-700 mb-6">
+                You've completed both days!
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">☀️</span>
+                    <span className="font-semibold">Day 1</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600 text-xl">${day1Earnings}</div>
+                    <div className="text-sm text-gray-600">{pizzasSoldDay1}/5 pizzas</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🌙</span>
+                    <span className="font-semibold">Day 2</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600 text-xl">${day2Earnings}</div>
+                    <div className="text-sm text-gray-600">{pizzasSoldDay2}/5 pizzas</div>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border-2 border-green-300">
+                  <div className="text-sm text-gray-600 mb-1">Total Earnings</div>
+                  <div className="font-bold text-3xl text-green-600">
+                    ${day1Earnings + day2Earnings}
+                  </div>
+                  {priceMultiplier > 1 && (
+                    <div className="text-sm text-orange-600 mt-1">
+                      With {priceMultiplier}x multiplier bonus!
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-2 justify-center">
+                <span className="text-2xl animate-pulse">🍕</span>
+                <span className="text-2xl animate-pulse" style={{animationDelay: '0.2s'}}>👨‍🍳</span>
+                <span className="text-2xl animate-pulse" style={{animationDelay: '0.4s'}}>⭐</span>
+              </div>
             </div>
           </div>
         )}
