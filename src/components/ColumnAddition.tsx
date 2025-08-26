@@ -372,30 +372,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     setShowEarningsCalculation(false);
   };
 
-  // Auto-complete functions
-  const autoCompletePractice = () => {
-    const currentQuestion = practiceQuestions[practiceIndex];
-    if (!currentQuestion) return;
-    
-    const solved = solveQuestion(currentQuestion);
-    setUserInputs({
-      answer: solved.correctAnswer,
-      carries: solved.correctCarries
-    });
-    
-    // Automatically mark as correct
-    setIsCorrect(true);
-    
-    // Track correct answers for pizza game trigger
-    setCorrectAnswerCount(prev => {
-      const newCount = prev + 1;
-      // Trigger pizza game every 2 correct answers
-      if (newCount % 2 === 0 && newCount > 0) {
-        setTimeout(() => setPhase('pizza-game'), 1500);
-      }
-      return newCount;
-    });
-  };
 
 
   // Get current question based on phase
@@ -628,14 +604,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               <>
                 <Button onClick={checkAnswer} className="grade-button">
                   Check Answer
-                </Button>
-                <Button 
-                  onClick={autoCompletePractice} 
-                  className="grade-button accent animate-fade-in"
-                  disabled={isCorrect === true}
-                >
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Auto Complete
                 </Button>
                 {isCorrect && practiceIndex < practiceQuestions.length - 1 && (
                   <Button onClick={nextPractice} className="grade-button accent">
