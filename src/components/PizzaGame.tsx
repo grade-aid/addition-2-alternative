@@ -89,9 +89,9 @@ class PizzaScene {
     this.pizzaGroup.add(plate);
     
     // Main pizza base with integrated thick crust edge
-    const baseGeometry = new THREE.CylinderGeometry(1.8, 2.4, 0.35, 32);
+    const baseGeometry = new THREE.CylinderGeometry(1.5, 2.4, 0.35, 32);
     const baseMaterial = new THREE.MeshPhongMaterial({ 
-      color: 0xE8C547, // Golden baked dough color
+      color: 0xD2691E, // Rich golden-brown crust color
       shininess: 5
     });
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
@@ -101,7 +101,7 @@ class PizzaScene {
     this.pizzaGroup.add(base);
     
     // Pizza surface (flat top for ingredients) - slightly recessed
-    const surfaceGeometry = new THREE.CylinderGeometry(1.7, 1.7, 0.02, 32);
+    const surfaceGeometry = new THREE.CylinderGeometry(1.4, 1.4, 0.02, 32);
     const surfaceMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xF2D062, // Slightly lighter surface
       shininess: 2
@@ -112,7 +112,7 @@ class PizzaScene {
     this.pizzaGroup.add(surface);
   }
 
-  private generateRandomPositions(count: number, maxRadius: number = 1.5) {
+  private generateRandomPositions(count: number, maxRadius: number = 1.2) {
     const positions = [];
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -127,7 +127,7 @@ class PizzaScene {
   }
 
   private createSauce() {
-    const sauceGeometry = new THREE.CylinderGeometry(1.6, 1.6, 0.02, 32);
+    const sauceGeometry = new THREE.CylinderGeometry(1.3, 1.3, 0.02, 32);
     const sauceMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xC73E1A,
       shininess: 10 
