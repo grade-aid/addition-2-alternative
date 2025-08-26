@@ -30,6 +30,7 @@ const INGREDIENTS: Ingredient[] = [
   { id: 'onion', name: 'Red Onions', price: 1, emoji: '🧅', color: '#9370DB', shape: 'onion' }
 ];
 
+// Keep the exact same PizzaScene class for visuals
 class PizzaScene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
@@ -339,221 +340,72 @@ interface PizzaGameProps {
   onClose: () => void;
 }
 
+interface GameState {
+  currentDay: number;
+  currentOrderIndex: number;
+  selectedIngredients: string[];
+  day1Earnings: number;
+  day2Earnings: number;
+  day1Attempts: number;
+  day2Attempts: number;
+  timeRemaining: number;
+  isTimerActive: boolean;
+  customerMood: '😊' | '😐' | '😠';
+  gameStarted: boolean;
+  gameCompleted: boolean;
+  showOrderComplete: boolean;
+  priceMultiplier: number;
+}
+
 export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<PizzaScene | null>(null);
-  
-  // Game start state
-  const [gameStarted, setGameStarted] = useState(false);
-  
-  const [currentDay, setCurrentDay] = useState(1);
-  const [pizzasSoldDay1, setPizzasSoldDay1] = useState(0);
-  const [pizzasSoldDay2, setPizzasSoldDay2] = useState(0);
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
-  const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
-  const [day1Earnings, setDay1Earnings] = useState(0);
-  const [day2Earnings, setDay2Earnings] = useState(0);
-  const [showOrderComplete, setShowOrderComplete] = useState(false);
-  
-  // Order attempt tracking
-  const [day1Attempts, setDay1Attempts] = useState(0);
-  const [day2Attempts, setDay2Attempts] = useState(0);
-  const [day1Failed, setDay1Failed] = useState(0);
-  const [day2Failed, setDay2Failed] = useState(0);
-  
-  // Timer states
-  const [timeLeft, setTimeLeft] = useState(15);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [orderFailed, setOrderFailed] = useState(false);
-  
-  // Visual feedback states
-  const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
-  const [gameCompleted, setGameCompleted] = useState(false);
-  
-  // Price multiplier system
-  const [priceMultiplier, setPriceMultiplier] = useState(1);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset all game states when component mounts to ensure fresh start for each level
-  useEffect(() => {
-    const sessionCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10) + 1;
-    console.log(`PizzaGame SESSION ${sessionCount} - resetting all states for fresh session`);
-    setGameStarted(false);
-    setCurrentDay(1);
-    setPizzasSoldDay1(0);
-    setPizzasSoldDay2(0);
-    setSelectedIngredients([]);
-    setCurrentOrderIndex(0);
-    setDay1Earnings(0);
-    setDay2Earnings(0);
-    setShowOrderComplete(false);
-    setDay1Attempts(0);
-    setDay2Attempts(0);
-    setDay1Failed(0);
-    setDay2Failed(0);
-    setTimeLeft(15);
-    setIsTimerActive(false);
-    setOrderFailed(false);
-    setCustomerMood('😊');
-    setGameCompleted(false);
-    console.log(`SESSION ${sessionCount} - All game states reset to initial values - ready for new session`);
-  }, []); // Run only once when component mounts
+  // Simplified state management - single game state object
+  const [gameState, setGameState] = useState<GameState>({
+    currentDay: 1,
+    currentOrderIndex: 0,
+    selectedIngredients: [],
+    day1Earnings: 0,
+    day2Earnings: 0,
+    day1Attempts: 0,
+    day2Attempts: 0,
+    timeRemaining: 15,
+    isTimerActive: false,
+    customerMood: '😊',
+    gameStarted: false,
+    gameCompleted: false,
+    showOrderComplete: false,
+    priceMultiplier: 1
+  });
 
-  // Load price multiplier from localStorage on component mount
-  useEffect(() => {
-    const gameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-    setPriceMultiplier(gameCount + 1);
-  }, []);
-
-  // Generate random orders for each day
+  // Generate orders once
   const [orders] = useState<PizzaOrder[]>(() => {
-    const generatedOrders = Array.from({ length: 10 }, (_, i) => {
+    return Array.from({ length: 10 }, (_, i) => {
       const numIngredients = Math.floor(Math.random() * 4) + 2; // 2-5 ingredients
       const shuffled = [...INGREDIENTS].sort(() => 0.5 - Math.random());
       const selectedIngredients = shuffled.slice(0, numIngredients);
       
-      const order = {
+      return {
         id: i + 1,
         ingredients: selectedIngredients.map(ing => ing.id),
-        totalPrice: (selectedIngredients.reduce((sum, ing) => sum + ing.price, 0) + 5) // Base pizza price $5
+        totalPrice: selectedIngredients.reduce((sum, ing) => sum + ing.price, 0) + 5 // Base pizza price $5
       };
-      
-      console.log(`Generated order ${order.id}:`, order);
-      return order;
     });
-    
-    console.log('All orders generated:', generatedOrders);
-    return generatedOrders;
   });
 
-  const currentOrder = orders[currentOrderIndex];
-  console.log('Current order state:', { 
-    currentOrderIndex, 
-    currentOrder: currentOrder ? `Order ${currentOrder.id}` : 'undefined',
-    ordersLength: orders.length,
-    currentDay 
-  });
-  const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
-  const totalAttemptsToday = currentDay === 1 ? day1Attempts : day2Attempts;
-
-  // Timer effect
+  // Initialize scene
   useEffect(() => {
-    if (isTimerActive && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          const newTime = prev - 1;
-          
-          // Update customer mood based on time (adjusted for 15 seconds)
-          if (newTime > 10) setCustomerMood('😊');
-          else if (newTime > 5) setCustomerMood('😐');
-          else setCustomerMood('😠');
-          
-          if (newTime <= 0) {
-            // Order failed - clear timer and move to next pizza
-            setIsTimerActive(false);
-            setOrderFailed(true);
-            setTimeout(() => {
-              setOrderFailed(false);
-              // Track failed order
-              if (currentDay === 1) {
-                setDay1Failed(prev => prev + 1);
-                setDay1Attempts(prev => prev + 1);
-              } else {
-                setDay2Failed(prev => prev + 1);
-                setDay2Attempts(prev => prev + 1);
-              }
-              nextOrder();
-            }, 2000);
-            return 0; // Ensure we return 0 to stop the timer
-          }
-          
-          return newTime;
-        });
-      }, 1000);
-      
-      return () => clearInterval(timer);
-    }
-  }, [isTimerActive, currentDay]); // Add currentDay to restart timer on day transitions
-
-  // Start timer when new order appears
-  useEffect(() => {
-    console.log('Timer effect triggered:', { 
-      currentOrder: currentOrder ? `Order ${currentOrder.id}` : 'null',
-      currentOrderIndex,
-      gameStarted,
-      currentDay,
-      timeLeft,
-      isTimerActive 
-    });
+    if (!canvasRef.current || sceneRef.current) return;
     
-    if (currentOrder && gameStarted) {
-      console.log('Starting timer for order:', currentOrder.id);
-      setTimeLeft(15);
-      setIsTimerActive(true);
-      setCustomerMood('😊');
-    } else {
-      console.log('Timer not started - missing requirements');
-    }
-  }, [currentOrderIndex, gameStarted, currentDay]);
-
-  const nextOrder = () => {
-    console.log('nextOrder called:', { 
-      currentDay, 
-      totalAttemptsToday, 
-      currentOrderIndex,
-      day1Attempts,
-      day2Attempts,
-      'day1Complete': day1Attempts >= 5,
-      'day2Complete': day2Attempts >= 5
-    });
+    console.log('🍕 Initializing new pizza game session');
+    sceneRef.current = new PizzaScene(canvasRef.current);
     
-    // Check if current day is complete (5 total attempts)
-    if (currentDay === 1 && day1Attempts >= 5) {
-      console.log('Day 1 completed, transitioning to Day 2');
-      setCurrentDay(2);
-      setCurrentOrderIndex(5); // Start Day 2 orders (index 5-9)
-      setSelectedIngredients([]);
-      // Timer will restart automatically via useEffect when currentDay changes
-      console.log('Day 2 starting with day2Attempts:', day2Attempts);
-    } else if (currentDay === 2 && day2Attempts >= 5) {
-      console.log('Day 2 completed, ending game');
-      console.log('Final earnings:', { day1Earnings, day2Earnings });
-      // Game completed - show celebration before calling onComplete
-      setGameCompleted(true);
-      setTimeout(() => {
-        console.log('Calling onComplete with earnings:', day1Earnings, day2Earnings);
-        // Save incremented game count to localStorage
-        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
-        onComplete(day1Earnings, day2Earnings);
-      }, 4000); // Show celebration for 4 seconds
-    } else {
-      console.log('Moving to next order within current day');
-      // Stay within current day, move to next order
-      if (currentDay === 1) {
-        // Day 1: orders 0-4
-        setCurrentOrderIndex(prev => Math.min(prev + 1, 4));
-      } else {
-        // Day 2: orders 5-9
-        setCurrentOrderIndex(prev => Math.min(prev + 1, 9));
-      }
-      setSelectedIngredients([]);
-    }
-  };
+    // Load price multiplier
+    const gameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+    setGameState(prev => ({ ...prev, priceMultiplier: gameCount + 1 }));
 
-  // Initialize Three.js scene
-  useEffect(() => {
-    if (canvasRef.current && !sceneRef.current) {
-      sceneRef.current = new PizzaScene(canvasRef.current);
-      
-      // Trigger initial resize to ensure proper canvas sizing
-      setTimeout(() => {
-        if (canvasRef.current && sceneRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect();
-          sceneRef.current.handleResize(rect.width, rect.height);
-        }
-      }, 100);
-    }
-    
     return () => {
       if (sceneRef.current) {
         sceneRef.current.dispose();
@@ -562,385 +414,345 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     };
   }, []);
 
-  // Update ingredients when selection changes
+  // Update 3D ingredients when selection changes
   useEffect(() => {
     if (sceneRef.current) {
-      sceneRef.current.updateIngredients(selectedIngredients);
+      sceneRef.current.updateIngredients(gameState.selectedIngredients);
     }
-  }, [selectedIngredients]);
+  }, [gameState.selectedIngredients]);
 
-  // Handle canvas resize
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       if (canvasRef.current && sceneRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        sceneRef.current.handleResize(rect.width, rect.height);
+        const { clientWidth, clientHeight } = canvasRef.current;
+        sceneRef.current.handleResize(clientWidth, clientHeight);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const toggleIngredient = (ingredientId: string) => {
-    setSelectedIngredients(prev => 
-      prev.includes(ingredientId) 
-        ? prev.filter(id => id !== ingredientId)
-        : [...prev, ingredientId]
-    );
+  // Timer management
+  useEffect(() => {
+    if (gameState.isTimerActive && gameState.timeRemaining > 0) {
+      timerRef.current = setTimeout(() => {
+        setGameState(prev => {
+          const newTime = prev.timeRemaining - 1;
+          
+          // Update customer mood
+          let mood: '😊' | '😐' | '😠' = '😊';
+          if (newTime <= 5) mood = '😠';
+          else if (newTime <= 10) mood = '😐';
+          
+          if (newTime <= 0) {
+            // Timer expired - handle failed order
+            console.log(`⏰ Timer expired on Day ${prev.currentDay}`);
+            return handleOrderFailure(prev);
+          }
+          
+          return { ...prev, timeRemaining: newTime, customerMood: mood };
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [gameState.isTimerActive, gameState.timeRemaining]);
+
+  // Start timer when new order begins
+  useEffect(() => {
+    if (gameState.gameStarted && getCurrentOrder()) {
+      console.log(`🎯 Starting timer for Day ${gameState.currentDay}, Order ${getCurrentOrder()?.id}`);
+      setGameState(prev => ({
+        ...prev,
+        timeRemaining: 15,
+        isTimerActive: true,
+        customerMood: '😊'
+      }));
+    }
+  }, [gameState.currentOrderIndex, gameState.currentDay, gameState.gameStarted]);
+
+  const getCurrentOrder = () => orders[gameState.currentOrderIndex];
+
+  const handleOrderFailure = (prevState: GameState): GameState => {
+    const newAttempts = prevState.currentDay === 1 
+      ? prevState.day1Attempts + 1 
+      : prevState.day2Attempts + 1;
+
+    console.log(`❌ Order failed on Day ${prevState.currentDay}, attempts: ${newAttempts}`);
+
+    return {
+      ...prevState,
+      day1Attempts: prevState.currentDay === 1 ? newAttempts : prevState.day1Attempts,
+      day2Attempts: prevState.currentDay === 2 ? newAttempts : prevState.day2Attempts,
+      timeRemaining: 0,
+      isTimerActive: false,
+      selectedIngredients: [],
+      ...getNextOrderState(prevState.currentDay, newAttempts, prevState.currentOrderIndex)
+    };
   };
 
-  const servePizza = () => {
-    if (!currentOrder || !isTimerActive) return;
-
-    // Check if pizza matches the order
-    const orderMatches = currentOrder.ingredients.every(ing => selectedIngredients.includes(ing)) &&
-                        selectedIngredients.every(ing => currentOrder.ingredients.includes(ing));
-
-    if (orderMatches) {
-      setIsTimerActive(false);
+  const getNextOrderState = (currentDay: number, attempts: number, currentIndex: number) => {
+    if (currentDay === 1 && attempts >= 5) {
+      console.log('📅 Day 1 complete, starting Day 2');
+      return {
+        currentDay: 2,
+        currentOrderIndex: 5 // Day 2 starts at index 5
+      };
+    } else if (currentDay === 2 && attempts >= 5) {
+      console.log('🎉 Game completed!');
+      return {
+        gameCompleted: true,
+        isTimerActive: false
+      };
+    } else {
+      // Continue to next order in current day
+      const nextIndex = currentDay === 1 
+        ? (currentIndex + 1) % 5  // Day 1: orders 0-4
+        : 5 + ((currentIndex - 5 + 1) % 5); // Day 2: orders 5-9
       
-      // Calculate bonus for time remaining and apply price multiplier
-      const timeBonus = Math.floor(timeLeft / 2) * priceMultiplier;
-      const basePrice = currentOrder.totalPrice * priceMultiplier;
-      const totalEarnings = basePrice + timeBonus;
-      
-      if (currentDay === 1) {
-        setPizzasSoldDay1(prev => prev + 1);
-        setDay1Earnings(prev => prev + totalEarnings);
-        setDay1Attempts(prev => prev + 1);
-      } else {
-        setPizzasSoldDay2(prev => prev + 1);  
-        setDay2Earnings(prev => prev + totalEarnings);
-        setDay2Attempts(prev => prev + 1);
-      }
-
-      setShowOrderComplete(true);
-      setTimeout(() => {
-        setShowOrderComplete(false);
-        nextOrder();
-      }, 1500);
+      return {
+        currentOrderIndex: nextIndex
+      };
     }
   };
 
-  const resetPizza = () => {
-    setSelectedIngredients([]);
-  };
-
   const startGame = () => {
-    setGameStarted(true);
+    console.log('🎮 Starting pizza game');
+    setGameState(prev => ({
+      ...prev,
+      gameStarted: true,
+      currentDay: 1,
+      currentOrderIndex: 0,
+      selectedIngredients: [],
+      timeRemaining: 15,
+      isTimerActive: false // Will be activated by useEffect
+    }));
   };
 
+  const toggleIngredient = (ingredientId: string) => {
+    setGameState(prev => ({
+      ...prev,
+      selectedIngredients: prev.selectedIngredients.includes(ingredientId)
+        ? prev.selectedIngredients.filter(id => id !== ingredientId)
+        : [...prev.selectedIngredients, ingredientId]
+    }));
+  };
+
+  const resetPizza = () => {
+    setGameState(prev => ({ ...prev, selectedIngredients: [] }));
+  };
+
+  const servePizza = () => {
+    const currentOrder = getCurrentOrder();
+    if (!currentOrder) return;
+
+    const isCorrect = 
+      gameState.selectedIngredients.length === currentOrder.ingredients.length &&
+      gameState.selectedIngredients.every(id => currentOrder.ingredients.includes(id));
+
+    console.log(`🍕 Serving pizza: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`);
+
+    if (isCorrect) {
+      const earnings = Math.round(currentOrder.totalPrice * gameState.priceMultiplier);
+      
+      setGameState(prev => {
+        const newAttempts = prev.currentDay === 1 
+          ? prev.day1Attempts + 1 
+          : prev.day2Attempts + 1;
+
+        const newEarnings = prev.currentDay === 1
+          ? prev.day1Earnings + earnings
+          : prev.day2Earnings + earnings;
+
+        const updatedState = {
+          ...prev,
+          day1Attempts: prev.currentDay === 1 ? newAttempts : prev.day1Attempts,
+          day2Attempts: prev.currentDay === 2 ? newAttempts : prev.day2Attempts,
+          day1Earnings: prev.currentDay === 1 ? newEarnings : prev.day1Earnings,
+          day2Earnings: prev.currentDay === 2 ? newEarnings : prev.day2Earnings,
+          showOrderComplete: true,
+          isTimerActive: false,
+          selectedIngredients: []
+        };
+
+        return {
+          ...updatedState,
+          ...getNextOrderState(prev.currentDay, newAttempts, prev.currentOrderIndex)
+        };
+      });
+
+      setTimeout(() => {
+        setGameState(prev => ({ ...prev, showOrderComplete: false }));
+      }, 2000);
+    } else {
+      // Incorrect order - treat as failure
+      setGameState(prev => handleOrderFailure(prev));
+    }
+  };
+
+  // Handle game completion
+  useEffect(() => {
+    if (gameState.gameCompleted) {
+      console.log('🏆 Game completed with earnings:', gameState.day1Earnings, gameState.day2Earnings);
+      
+      setTimeout(() => {
+        // Save incremented game count
+        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        
+        onComplete(gameState.day1Earnings, gameState.day2Earnings);
+      }, 2000);
+    }
+  }, [gameState.gameCompleted, gameState.day1Earnings, gameState.day2Earnings, onComplete]);
+
+  const currentOrder = getCurrentOrder();
+  const currentDayAttempts = gameState.currentDay === 1 ? gameState.day1Attempts : gameState.day2Attempts;
+
+  if (gameState.gameCompleted) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <Card className="p-8 text-center max-w-md">
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold mb-4">Pizza Master!</h2>
+          <p className="text-lg mb-4">You completed both days!</p>
+          <div className="space-y-2 mb-6">
+            <p>Day 1 Earnings: ${gameState.day1Earnings}</p>
+            <p>Day 2 Earnings: ${gameState.day2Earnings}</p>
+            <p className="font-bold">Total: ${gameState.day1Earnings + gameState.day2Earnings}</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-6xl p-8">
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="text-4xl">{currentDay === 1 ? '☀️' : '🌙'}</div>
-            <h1 className="font-display text-4xl font-bold text-brand-black">
-              🍕 Day {currentDay}
-            </h1>
-            <div className="text-4xl">{customerMood}</div>
-          </div>
-          
-          {/* Price Multiplier Indicator */}
-          {priceMultiplier > 1 && (
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-full mb-4 animate-pulse">
-              <span className="text-2xl">🔥</span>
-              <span className="font-bold text-lg">{priceMultiplier}x PRICES!</span>
-              <span className="text-2xl">💰</span>
-            </div>
-          )}
-          
-          <div className="flex justify-center gap-8">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">☀️</span>
-              <div className="flex gap-1">
-                {Array.from({length: 5}, (_, i) => {
-                  let color = 'bg-gray-300'; // Pending
-                  if (i < pizzasSoldDay1) {
-                    color = 'bg-green-500'; // Success
-                  } else if (i < day1Attempts) {
-                    color = 'bg-red-500'; // Failed
-                  }
-                  return (
-                    <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
-                  );
-                })}
-              </div>
-              <span className="text-lg font-bold">${day1Earnings}</span>
-              {day1Failed > 0 && (
-                <span className="text-sm text-red-600">(-{day1Failed})</span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🌙</span>
-              <div className="flex gap-1">
-                {Array.from({length: 5}, (_, i) => {
-                  let color = 'bg-gray-300'; // Pending
-                  if (i < pizzasSoldDay2) {
-                    color = 'bg-green-500'; // Success
-                  } else if (i < day2Attempts) {
-                    color = 'bg-red-500'; // Failed
-                  }
-                  return (
-                    <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
-                  );
-                })}
-              </div>
-              <span className="text-lg font-bold">${day2Earnings}</span>
-              {day2Failed > 0 && (
-                <span className="text-sm text-red-600">(-{day2Failed})</span>
-              )}
-            </div>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">🍕 Pizza Making Game</h2>
+          <Button variant="outline" onClick={onClose} size="sm">✕</Button>
         </div>
 
-        {showOrderComplete && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-3xl text-center animate-scale-in">
-              <div className="text-6xl mb-4">✅</div>
-              <div className="text-4xl font-bold text-green-600 mb-2">
-                +${(currentOrder?.totalPrice || 0) * priceMultiplier + Math.floor(timeLeft / 2) * priceMultiplier}
-              </div>
-              <div className="text-lg text-gray-600">⚡ Speed Bonus: +${Math.floor(timeLeft / 2) * priceMultiplier}</div>
-            </div>
+        {!gameState.gameStarted ? (
+          <div className="text-center py-8">
+            <h3 className="text-xl mb-4">Welcome to Pizza Paradise!</h3>
+            <p className="mb-6">Make pizzas for customers across 2 days. Match their orders exactly!</p>
+            <Button onClick={startGame} size="lg">Start Game</Button>
           </div>
-        )}
-
-        {orderFailed && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-3xl text-center animate-scale-in">
-              <div className="text-6xl mb-4">❌</div>
-              <div className="text-2xl font-bold text-red-600">Time's Up!</div>
-            </div>
-          </div>
-        )}
-
-        {gameCompleted && (
-          <div className="fixed inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-green-500 flex items-center justify-center z-50">
-            <div className="bg-white p-12 rounded-3xl text-center animate-scale-in max-w-md mx-4">
-              <div className="text-8xl mb-6 animate-pulse">🎉</div>
-              <div className="text-4xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text mb-4">
-                Congratulations!
-              </div>
-              <div className="text-xl text-gray-700 mb-6">
-                You've completed both days!
-              </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            {/* 3D Pizza View */}
+            <div className="space-y-4">
+              <canvas
+                ref={canvasRef}
+                className="w-full h-64 border rounded-lg bg-sky-200"
+                width="400"
+                height="300"
+              />
               
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">☀️</span>
-                    <span className="font-semibold">Day 1</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-600 text-xl">${day1Earnings}</div>
-                    <div className="text-sm text-gray-600">{pizzasSoldDay1}/5 pizzas</div>
-                  </div>
+              {/* Game Status */}
+              <Card className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold">Day {gameState.currentDay}</span>
+                  <span>Attempts: {currentDayAttempts}/5</span>
                 </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🌙</span>
-                    <span className="font-semibold">Day 2</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-600 text-xl">${day2Earnings}</div>
-                    <div className="text-sm text-gray-600">{pizzasSoldDay2}/5 pizzas</div>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border-2 border-green-300">
-                  <div className="text-sm text-gray-600 mb-1">Total Earnings</div>
-                  <div className="font-bold text-3xl text-green-600">
-                    ${day1Earnings + day2Earnings}
-                  </div>
-                  {priceMultiplier > 1 && (
-                    <div className="text-sm text-orange-600 mt-1">
-                      With {priceMultiplier}x multiplier bonus!
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex gap-2 justify-center">
-                <span className="text-2xl animate-pulse">🍕</span>
-                <span className="text-2xl animate-pulse" style={{animationDelay: '0.2s'}}>👨‍🍳</span>
-                <span className="text-2xl animate-pulse" style={{animationDelay: '0.4s'}}>⭐</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 3D Pizza Viewer with Timer */}
-          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl relative overflow-hidden h-[400px] flex items-center justify-center">
-            {/* Timer Ring */}
-            <div className="absolute top-4 left-4 z-10">
-              <div className="relative w-20 h-20">
-                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.3)"
-                    strokeWidth="8"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke={timeLeft > 6 ? '#10b981' : timeLeft > 3 ? '#f59e0b' : '#ef4444'}
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(timeLeft / 15) * 283} 283`}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className={`text-2xl font-bold ${timeLeft <= 5 ? 'animate-pulse text-red-600' : 'text-gray-700'}`}>
-                    {timeLeft}
+                <div className="flex justify-between items-center mb-2">
+                  <span>Customer: {gameState.customerMood}</span>
+                  <span className="font-mono">
+                    Time: {gameState.timeRemaining}s
                   </span>
                 </div>
-              </div>
+                <div className="text-sm">
+                  <span>Day 1: ${gameState.day1Earnings}</span> | 
+                  <span> Day 2: ${gameState.day2Earnings}</span>
+                </div>
+              </Card>
             </div>
 
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full rounded-xl block"
-            />
-          </div>
-
-          {/* Game Controls */}
-          <div className="space-y-6">
-            {!gameStarted ? (
-              /* Start Game Interface */
-              <div className="text-center space-y-6">
-                <div className="text-6xl mb-4">🍕</div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                  Pizza Restaurant Challenge
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Ready to start your pizza restaurant? Make exact pizzas within 15 seconds!
-                </p>
-                
-                <Button
-                  onClick={startGame}
-                  className="px-8 py-4 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:scale-105 transition-all duration-300"
-                >
-                  <span className="text-2xl mr-2">🚀</span>
-                  Start Game
-                </Button>
-              </div>
-            ) : (
-              /* Game Controls */
-              <>
-                {/* Current Order */}
-                {currentOrder && (
-                  <Card className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-2xl">📋</div>
-                      <div className="text-2xl">{customerMood}</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mb-4">
+            {/* Game Controls */}
+            <div className="space-y-4">
+              {/* Current Order */}
+              {currentOrder && (
+                <Card className="p-4">
+                  <h4 className="font-bold mb-2">Order #{currentOrder.id}</h4>
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
                       {currentOrder.ingredients.map(ingredientId => {
                         const ingredient = INGREDIENTS.find(ing => ing.id === ingredientId);
-                        const isSelected = selectedIngredients.includes(ingredientId);
                         return ingredient ? (
-                          <div key={ingredientId} className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
-                            isSelected ? 'bg-green-100 border-2 border-green-400 scale-105' : 'bg-white border border-gray-200'
-                          }`}>
-                            <span className="text-2xl">{ingredient.emoji}</span>
-                            <div className="flex-1">
-                              {isSelected && <span className="text-green-600 text-lg">✓</span>}
-                            </div>
-                          </div>
+                          <span key={ingredientId} className="px-2 py-1 bg-blue-100 rounded text-sm">
+                            {ingredient.emoji} {ingredient.name}
+                          </span>
                         ) : null;
                       })}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-2xl font-bold text-green-600">
-                        ${currentOrder.totalPrice * priceMultiplier}
-                        {priceMultiplier > 1 && (
-                          <span className="text-sm text-orange-600 ml-1">({priceMultiplier}x)</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600">+ Speed Bonus</div>
-                    </div>
-                  </Card>
-                )}
-
-                {/* Ingredient Selection */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-2xl">🧑‍🍳</span>
-                    <div className="text-xl font-bold">Ingredients</div>
+                    <p className="text-sm">
+                      Value: ${Math.round(currentOrder.totalPrice * gameState.priceMultiplier)} 
+                      (×{gameState.priceMultiplier})
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {INGREDIENTS.map(ingredient => {
-                      const isSelected = selectedIngredients.includes(ingredient.id);
-                      const isRequired = currentOrder?.ingredients.includes(ingredient.id);
-                      
-                      return (
-                        <Button
-                          key={ingredient.id}
-                          onClick={() => toggleIngredient(ingredient.id)}
-                          variant={isSelected ? "default" : "outline"}
-                          className={`flex items-center justify-center gap-2 p-4 h-auto transition-all duration-200 ${
-                            isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'
-                          }`}
-                          style={{
-                            backgroundColor: isSelected ? ingredient.color : undefined
-                          }}
-                        >
-                          <span className="text-3xl">{ingredient.emoji}</span>
-                          <div className="text-center">
-                            <div className={`text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
-                              ${ingredient.price * priceMultiplier}
-                              {priceMultiplier > 1 && (
-                                <span className="text-xs opacity-75 block">({priceMultiplier}x)</span>
-                              )}
-                            </div>
-                            {isSelected && <div className="text-white text-lg">✓</div>}
-                          </div>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
+                </Card>
+              )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <Button 
-                    onClick={servePizza} 
-                    disabled={!isTimerActive}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-                  >
-                    <span className="text-2xl mr-2">🍕</span>
-                    SERVE
-                  </Button>
-                  <Button 
-                    onClick={resetPizza} 
-                    variant="outline"
-                    className="w-16 h-16 rounded-full bg-red-100 hover:bg-red-200 border-red-300"
-                  >
-                    <RotateCcw className="w-6 h-6 text-red-600" />
-                  </Button>
+              {/* Ingredients Selection */}
+              <Card className="p-4">
+                <h4 className="font-bold mb-3">Available Ingredients</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {INGREDIENTS.map(ingredient => (
+                    <button
+                      key={ingredient.id}
+                      onClick={() => toggleIngredient(ingredient.id)}
+                      className={`p-2 text-sm border rounded transition-colors ${
+                        gameState.selectedIngredients.includes(ingredient.id)
+                          ? 'bg-blue-500 text-white border-blue-500'
+                          : 'bg-white hover:bg-gray-50 border-gray-300'
+                      }`}
+                    >
+                      {ingredient.emoji} {ingredient.name}
+                    </button>
+                  ))}
                 </div>
-              </>
-            )}
+              </Card>
 
-            <Button onClick={onClose} variant="outline" className="w-full mt-4 text-gray-600 hover:text-gray-800">
-              ⏭️ Skip Game
-            </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button 
+                  onClick={servePizza} 
+                  disabled={!gameState.isTimerActive}
+                  className="flex-1"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Serve Pizza
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={resetPizza}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </Card>
+        )}
+
+        {/* Order Complete Popup */}
+        {gameState.showOrderComplete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="p-6 text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <h3 className="text-xl font-bold mb-2">Perfect!</h3>
+              <p>Order completed successfully!</p>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
