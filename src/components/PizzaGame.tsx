@@ -353,7 +353,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [showOrderComplete, setShowOrderComplete] = useState(false);
   
   // Timer states
-  const [timeLeft, setTimeLeft] = useState(20);
+  const [timeLeft, setTimeLeft] = useState(10);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [orderFailed, setOrderFailed] = useState(false);
   
@@ -390,8 +390,8 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           const newTime = prev - 1;
           
           // Update customer mood based on time
-          if (newTime > 12) setCustomerMood('😊');
-          else if (newTime > 6) setCustomerMood('😐');
+          if (newTime > 6) setCustomerMood('😊');
+          else if (newTime > 3) setCustomerMood('😐');
           else setCustomerMood('😠');
           
           if (newTime <= 0) {
@@ -415,7 +415,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   // Start timer when new order appears
   useEffect(() => {
     if (currentOrder) {
-      setTimeLeft(20);
+      setTimeLeft(10);
       setIsTimerActive(true);
       setCustomerMood('😊');
     }
@@ -596,10 +596,10 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                     cy="50"
                     r="45"
                     fill="none"
-                    stroke={timeLeft > 12 ? '#10b981' : timeLeft > 6 ? '#f59e0b' : '#ef4444'}
+                    stroke={timeLeft > 6 ? '#10b981' : timeLeft > 3 ? '#f59e0b' : '#ef4444'}
                     strokeWidth="8"
                     strokeLinecap="round"
-                    strokeDasharray={`${(timeLeft / 20) * 283} 283`}
+                    strokeDasharray={`${(timeLeft / 10) * 283} 283`}
                     className="transition-all duration-1000"
                   />
                 </svg>
@@ -691,7 +691,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                       onClick={() => toggleIngredient(ingredient.id)}
                       variant={isSelected ? "default" : "outline"}
                       className={`flex items-center justify-center gap-2 p-4 h-auto transition-all duration-200 ${
-                        isRequired ? 'ring-2 ring-yellow-400 ring-offset-2 animate-pulse' : ''
+                        isRequired ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
                       } ${isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'}`}
                       style={{
                         backgroundColor: isSelected ? ingredient.color : undefined,
