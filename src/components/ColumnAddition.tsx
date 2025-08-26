@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { CheckCircle, RotateCcw, ArrowRight } from 'lucide-react';
+import { Input } from './ui/input';
+import { CheckCircle, RotateCcw, ArrowRight, Eye, PenTool } from 'lucide-react';
 
 interface ColumnAdditionProps {
   className?: string;
@@ -13,14 +14,27 @@ interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
+interface SolvedExample extends Question {
+  correctAnswer: string[];
+  correctCarries: string[];
+}
+
+interface UserInputs {
+  answer: string[];
+  carries: string[];
+}
+
 export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }) => {
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [questionNumber, setQuestionNumber] = useState(1);
-  const [activeColumn, setActiveColumn] = useState<number>(-1);
-  const [answer, setAnswer] = useState<string[]>([]);
-  const [carries, setCarries] = useState<string[]>([]);
-  const [isComplete, setIsComplete] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  // Phase management
+  const [phase, setPhase] = useState<'examples' | 'practice'>('examples');
+  const [exampleIndex, setExampleIndex] = useState(0);
+  const [practiceIndex, setPracticeIndex] = useState(0);
+  
+  // Data storage
+  const [examples, setExamples] = useState<SolvedExample[]>([]);
+  const [practiceQuestions, setPracticeQuestions] = useState<Question[]>([]);
+  const [userInputs, setUserInputs] = useState<UserInputs>({ answer: [], carries: [] });
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   // Question generation based on difficulty
   const generateQuestion = useCallback((difficulty: 'easy' | 'medium' | 'hard'): Question => {
@@ -51,106 +65,126 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     };
   }, []);
 
-  // Get difficulty based on question number
-  const getCurrentDifficulty = useCallback((questionNum: number): 'easy' | 'medium' | 'hard' => {
-    if (questionNum <= 3) return 'easy';
-    if (questionNum <= 6) return 'medium';
-    return 'hard';
-  }, []);
-
-  // Generate new question
-  const generateNewQuestion = useCallback(() => {
-    const difficulty = getCurrentDifficulty(questionNumber);
-    const question = generateQuestion(difficulty);
-    setCurrentQuestion(question);
-    
-    // Reset calculation state
+  // Solve a question and return the correct answer and carries
+  const solveQuestion = useCallback((question: Question): SolvedExample => {
     const maxLength = Math.max(question.topNumber.length, question.bottomNumber.length);
-    setAnswer(new Array(maxLength + 1).fill(''));
-    setCarries(new Array(maxLength + 1).fill(''));
-    setActiveColumn(-1);
-    setCurrentStep(0);
-    setIsComplete(false);
-  }, [questionNumber, getCurrentDifficulty, generateQuestion]);
-
-  // Initialize with first question
-  useEffect(() => {
-    generateNewQuestion();
+    const paddedTop = question.topNumber.padStart(maxLength, ' ');
+    const paddedBottom = question.bottomNumber.padStart(maxLength, ' ');
+    
+    const answer: string[] = new Array(maxLength + 1).fill('');
+    const carries: string[] = new Array(maxLength + 1).fill('');
+    
+    let carry = 0;
+    
+    // Solve from right to left
+    for (let i = maxLength - 1; i >= 0; i--) {
+      const topDigit = parseInt(paddedTop[i] || '0') || 0;
+      const bottomDigit = parseInt(paddedBottom[i] || '0') || 0;
+      const sum = topDigit + bottomDigit + carry;
+      
+      answer[i] = (sum % 10).toString();
+      carry = Math.floor(sum / 10);
+      
+      // Store carry for next column (to the left)
+      if (carry > 0 && i > 0) {
+        carries[i - 1] = carry.toString();
+      }
+    }
+    
+    // Handle final carry
+    if (carry > 0) {
+      answer[maxLength] = carry.toString();
+    }
+    
+    return {
+      ...question,
+      correctAnswer: answer,
+      correctCarries: carries
+    };
   }, []);
 
-  const startCalculation = useCallback(() => {
-    if (!currentQuestion) return;
+  // Initialize examples and practice questions
+  useEffect(() => {
+    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'easy', 'medium', 'medium', 'hard'];
+    const exampleQuestions = difficulties.map(diff => generateQuestion(diff));
+    const solvedExamples = exampleQuestions.map(q => solveQuestion(q));
     
-    const maxLength = Math.max(currentQuestion.topNumber.length, currentQuestion.bottomNumber.length);
-    // Start from RIGHT (rightmost column) - traditional method
-    setActiveColumn(maxLength - 1);
-  }, [currentQuestion]);
-
-  const resetCalculation = useCallback(() => {
-    if (!currentQuestion) return;
+    setExamples(solvedExamples);
     
-    const maxLength = Math.max(currentQuestion.topNumber.length, currentQuestion.bottomNumber.length);
-    setAnswer(new Array(maxLength + 1).fill(''));
-    setCarries(new Array(maxLength + 1).fill(''));
-    setActiveColumn(-1);
-    setCurrentStep(0);
-    setIsComplete(false);
-  }, [currentQuestion]);
-
-  // RIGHT-TO-LEFT calculation logic (traditional method)
-  const calculateColumn = useCallback((columnIndex: number) => {
-    if (!currentQuestion) return;
+    // Generate 10 practice questions
+    const practice = Array.from({ length: 10 }, (_, i) => {
+      const diffIndex = Math.floor(i / 3.3); // Distribute difficulties
+      const difficulty = ['easy', 'medium', 'hard'][Math.min(diffIndex, 2)] as 'easy' | 'medium' | 'hard';
+      return generateQuestion(difficulty);
+    });
     
-    const maxLength = Math.max(currentQuestion.topNumber.length, currentQuestion.bottomNumber.length);
-    const paddedTop = currentQuestion.topNumber.padStart(maxLength, ' ');
-    const paddedBottom = currentQuestion.bottomNumber.padStart(maxLength, ' ');
+    setPracticeQuestions(practice);
     
-    if (columnIndex < 0 || columnIndex >= maxLength) return;
-
-    const topDigit = parseInt(paddedTop[columnIndex] || '0') || 0;
-    const bottomDigit = parseInt(paddedBottom[columnIndex] || '0') || 0;
-    const carryIn = parseInt(carries[columnIndex] || '0') || 0;
-    
-    const sum = topDigit + bottomDigit + carryIn;
-    const digit = sum % 10;
-    const carry = Math.floor(sum / 10);
-
-    const newAnswer = [...answer];
-    const newCarries = [...carries];
-    
-    newAnswer[columnIndex] = digit.toString();
-    // Carry goes to the LEFT (lower index) - traditional method
-    if (carry > 0 && columnIndex > 0) {
-      newCarries[columnIndex - 1] = carry.toString();
-    } else if (carry > 0 && columnIndex === 0) {
-      // Final carry goes to the leftmost position
-      newAnswer[maxLength] = carry.toString();
+    // Initialize user inputs for first practice question
+    if (practice[0]) {
+      const maxLength = Math.max(practice[0].topNumber.length, practice[0].bottomNumber.length);
+      setUserInputs({
+        answer: new Array(maxLength + 1).fill(''),
+        carries: new Array(maxLength + 1).fill('')
+      });
     }
+  }, [generateQuestion, solveQuestion]);
 
-    setAnswer(newAnswer);
-    setCarries(newCarries);
-
-    // Move to next column (RIGHT to LEFT - decrement index)
-    if (columnIndex > 0) {
-      setActiveColumn(columnIndex - 1);
-      setCurrentStep(prev => prev + 1);
-    } else {
-      setActiveColumn(-1);
-      setIsComplete(true);
-    }
-  }, [currentQuestion, carries, answer]);
-
-  const handleColumnClick = (columnIndex: number) => {
-    if (columnIndex === activeColumn) {
-      calculateColumn(columnIndex);
+  const nextExample = () => {
+    if (exampleIndex < examples.length - 1) {
+      setExampleIndex(prev => prev + 1);
     }
   };
 
-  const nextQuestion = useCallback(() => {
-    setQuestionNumber(prev => prev + 1);
-    generateNewQuestion();
-  }, [generateNewQuestion]);
+  const startPractice = () => {
+    setPhase('practice');
+    setPracticeIndex(0);
+    setIsCorrect(null);
+  };
 
+  const handleInputChange = (type: 'answer' | 'carries', index: number, value: string) => {
+    if (value === '' || /^\d$/.test(value)) {
+      setUserInputs(prev => ({
+        ...prev,
+        [type]: prev[type].map((v, i) => i === index ? value : v)
+      }));
+      setIsCorrect(null); // Reset validation
+    }
+  };
+
+  const checkAnswer = () => {
+    const currentQuestion = practiceQuestions[practiceIndex];
+    if (!currentQuestion) return;
+    
+    const solved = solveQuestion(currentQuestion);
+    
+    // Compare user inputs with correct answers
+    const answerCorrect = userInputs.answer.every((val, i) => val === solved.correctAnswer[i]);
+    const carriesCorrect = userInputs.carries.every((val, i) => val === solved.correctCarries[i]);
+    
+    setIsCorrect(answerCorrect && carriesCorrect);
+  };
+
+  const nextPractice = () => {
+    if (practiceIndex < practiceQuestions.length - 1) {
+      setPracticeIndex(prev => prev + 1);
+      
+      // Reset inputs for next question
+      const nextQuestion = practiceQuestions[practiceIndex + 1];
+      if (nextQuestion) {
+        const maxLength = Math.max(nextQuestion.topNumber.length, nextQuestion.bottomNumber.length);
+        setUserInputs({
+          answer: new Array(maxLength + 1).fill(''),
+          carries: new Array(maxLength + 1).fill('')
+        });
+      }
+      setIsCorrect(null);
+    }
+  };
+
+  // Get current question based on phase
+  const currentQuestion = phase === 'examples' ? examples[exampleIndex] : practiceQuestions[practiceIndex];
+  
   if (!currentQuestion) return null;
 
   const maxLength = Math.max(currentQuestion.topNumber.length, currentQuestion.bottomNumber.length);
@@ -164,12 +198,24 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
           {/* Title */}
           <div className="text-center">
             <h1 className="font-display text-4xl md:text-5xl font-bold text-brand-black mb-2">
-              Column Addition Practice
+              Column Addition {phase === 'examples' ? 'Examples' : 'Practice'}
             </h1>
             <div className="flex items-center justify-center gap-4 text-xl">
-              <span className="px-4 py-2 bg-primary/10 rounded-full font-medium">
-                Question {questionNumber}
-              </span>
+              {phase === 'examples' ? (
+                <>
+                  <span className="px-4 py-2 bg-accent/10 rounded-full font-medium flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Example {exampleIndex + 1}/5
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="px-4 py-2 bg-primary/10 rounded-full font-medium flex items-center gap-2">
+                    <PenTool className="w-5 h-5" />
+                    Question {practiceIndex + 1}/10
+                  </span>
+                </>
+              )}
               <span className={`px-4 py-2 rounded-full font-medium ${
                 currentQuestion.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
                 currentQuestion.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -179,34 +225,38 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               </span>
             </div>
             <p className="text-lg text-muted-foreground mt-2">
-              Solve RIGHT to LEFT • Click each column to calculate
+              {phase === 'examples' 
+                ? 'Study the solved examples to learn the method'
+                : 'Fill in the answer and carries, then check your solution'
+              }
             </p>
           </div>
 
           {/* Control Buttons */}
           <div className="flex justify-center gap-4">
-            <Button 
-              onClick={startCalculation}
-              className="grade-button"
-              disabled={activeColumn !== -1 || isComplete}
-            >
-              Start Solving
-            </Button>
-            <Button 
-              onClick={resetCalculation}
-              className="grade-button secondary"
-              disabled={activeColumn === -1 && !isComplete}
-            >
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Reset
-            </Button>
-            {isComplete && (
-              <Button 
-                onClick={nextQuestion}
-                className="grade-button accent"
-              >
-                Next Question <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+            {phase === 'examples' ? (
+              <>
+                {exampleIndex < examples.length - 1 ? (
+                  <Button onClick={nextExample} className="grade-button">
+                    Next Example <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                ) : (
+                  <Button onClick={startPractice} className="grade-button accent">
+                    Start Practice <PenTool className="w-5 h-5 ml-2" />
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <Button onClick={checkAnswer} className="grade-button">
+                  Check Answer
+                </Button>
+                {isCorrect && practiceIndex < practiceQuestions.length - 1 && (
+                  <Button onClick={nextPractice} className="grade-button accent">
+                    Next Question <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
@@ -217,15 +267,26 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               {/* Carry Row */}
               <div className="flex justify-center">
                 <div className="flex gap-2">
-                  {/* Extra space for final carry position */}
                   <div style={{ width: '48px' }}></div>
-                  {/* Carry positions aligned with digit columns */}
                   {Array.from({ length: maxLength }, (_, i) => (
                     <div key={`carry-${i}`} className="flex justify-center" style={{ width: '48px' }}>
-                      {carries[i] && (
-                        <div className="carry-box">
-                          {carries[i]}
-                        </div>
+                       {phase === 'examples' ? (
+                         // Show solved carries for examples
+                         (currentQuestion as SolvedExample).correctCarries?.[i] && (
+                           <div className="carry-box">
+                             {(currentQuestion as SolvedExample).correctCarries[i]}
+                           </div>
+                         )
+                      ) : (
+                        // Input fields for practice
+                        <Input
+                          type="text"
+                          value={userInputs.carries[i] || ''}
+                          onChange={(e) => handleInputChange('carries', i, e.target.value)}
+                          className="w-8 h-8 text-center text-sm p-1 border-secondary/50 bg-secondary/10"
+                          maxLength={1}
+                          placeholder=""
+                        />
                       )}
                     </div>
                   ))}
@@ -235,12 +296,9 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               {/* Top Number Row */}
               <div className="flex justify-center">
                 <div className="flex gap-2">
-                  <div style={{ width: '48px' }}></div> {/* Spacer for alignment */}
+                  <div style={{ width: '48px' }}></div>
                   {paddedTop.split('').map((digit, index) => (
-                    <div 
-                      key={`top-${index}`}
-                      className={`digit-box ${activeColumn === index ? 'active' : ''}`}
-                    >
+                    <div key={`top-${index}`} className="digit-box">
                       {digit.trim() || ''}
                     </div>
                   ))}
@@ -254,10 +312,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                     +
                   </div>
                   {paddedBottom.split('').map((digit, index) => (
-                    <div 
-                      key={`bottom-${index}`}
-                      className={`digit-box ${activeColumn === index ? 'active' : ''}`}
-                    >
+                    <div key={`bottom-${index}`} className="digit-box">
                       {digit.trim() || ''}
                     </div>
                   ))}
@@ -270,78 +325,104 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               {/* Answer Row */}
               <div className="flex justify-center">
                 <div className="flex gap-2">
-                  {/* Final carry position (leftmost) */}
-                  <div 
-                    className="digit-box"
-                    style={{ visibility: answer[maxLength] ? 'visible' : 'hidden' }}
-                  >
-                    {answer[maxLength] || ''}
+                  {/* Final carry position */}
+                  <div className="flex justify-center" style={{ width: '48px' }}>
+                    {phase === 'examples' ? (
+                      <div 
+                        className="digit-box"
+                        style={{ visibility: (currentQuestion as SolvedExample).correctAnswer?.[maxLength] ? 'visible' : 'hidden' }}
+                      >
+                        {(currentQuestion as SolvedExample).correctAnswer?.[maxLength] || ''}
+                      </div>
+                    ) : (
+                      <Input
+                        type="text"
+                        value={userInputs.answer[maxLength] || ''}
+                        onChange={(e) => handleInputChange('answer', maxLength, e.target.value)}
+                        className="w-12 h-12 text-center font-mono font-bold p-1"
+                        maxLength={1}
+                        placeholder=""
+                        style={{ visibility: 'visible' }}
+                      />
+                    )}
                   </div>
-                  {/* Main answer positions aligned with numbers */}
+                  
+                  {/* Main answer positions */}
                   {Array.from({ length: maxLength }, (_, i) => (
-                    <div 
-                      key={`answer-${i}`}
-                      className={`digit-box cursor-pointer hover:shadow-lg transition-all duration-200 ${
-                        activeColumn === i ? 'active animate-bounce-gentle' : ''
-                      }`}
-                      onClick={() => handleColumnClick(i)}
-                      style={{ 
-                        cursor: activeColumn === i ? 'pointer' : 'default'
-                      }}
-                    >
-                      {answer[i] || ''}
+                    <div key={`answer-${i}`} className="flex justify-center" style={{ width: '48px' }}>
+                       {phase === 'examples' ? (
+                         <div className="digit-box">
+                           {(currentQuestion as SolvedExample).correctAnswer?.[i] || ''}
+                         </div>
+                      ) : (
+                        <Input
+                          type="text"
+                          value={userInputs.answer[i] || ''}
+                          onChange={(e) => handleInputChange('answer', i, e.target.value)}
+                          className="w-12 h-12 text-center font-mono font-bold p-1"
+                          maxLength={1}
+                          placeholder=""
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
 
+              {/* Feedback */}
+              {phase === 'practice' && isCorrect !== null && (
+                <div className={`text-center p-4 rounded-lg font-medium ${
+                  isCorrect 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {isCorrect ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <CheckCircle className="w-6 h-6" />
+                      Excellent! Your answer is correct! 🎉
+                    </div>
+                  ) : (
+                    <div>
+                      Not quite right. Check your carries and answer digits.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Instructions */}
-              <div className="text-center mt-6">
-                {activeColumn >= 0 && (
-                  <div className="space-y-2">
-                    <p className="text-lg font-medium text-primary animate-bounce-gentle">
-                      👉 Click the RIGHTMOST highlighted column to calculate: Column {maxLength - activeColumn}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Solving RIGHT ← LEFT (Column 1, 2, 3...)
-                    </p>
-                  </div>
-                )}
-                {isComplete && (
-                  <div className="flex items-center justify-center gap-2 text-secondary text-xl font-bold">
-                    <CheckCircle className="w-6 h-6" />
-                    Great job! Ready for the next question? 🎉
-                  </div>
-                )}
-                {activeColumn === -1 && !isComplete && (
-                  <div className="space-y-2">
-                    <p className="text-lg font-medium text-muted-foreground">
-                      Click "Start Solving" to begin from the RIGHT!
-                    </p>
-                    <p className="text-sm text-accent font-medium">
-                      → We solve RIGHT to LEFT (traditional way) ←
-                    </p>
-                  </div>
-                )}
-              </div>
+              {phase === 'examples' && (
+                <div className="text-center text-muted-foreground">
+                  <p>This shows the complete solution with all carries and the final answer.</p>
+                  <p className="text-sm mt-1">Notice how we work from RIGHT ← LEFT, column by column.</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Progress Indicator */}
-          {maxLength > 0 && (
-            <div className="flex justify-center">
-              <div className="flex gap-2">
-                {Array.from({ length: maxLength }, (_, i) => (
+          <div className="flex justify-center">
+            <div className="flex gap-2">
+              {phase === 'examples' ? (
+                Array.from({ length: 5 }, (_, i) => (
                   <div 
                     key={`progress-${i}`}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      currentStep > (maxLength - 1 - i) ? 'bg-secondary' : 'bg-border-gray'
+                      i <= exampleIndex ? 'bg-accent' : 'bg-border-gray'
                     }`}
                   />
-                ))}
-              </div>
+                ))
+              ) : (
+                Array.from({ length: 10 }, (_, i) => (
+                  <div 
+                    key={`progress-${i}`}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      i <= practiceIndex ? 'bg-primary' : 'bg-border-gray'
+                    }`}
+                  />
+                ))
+              )}
             </div>
-          )}
+          </div>
         </div>
       </Card>
     </div>
