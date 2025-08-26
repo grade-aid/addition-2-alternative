@@ -552,36 +552,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     setGameStarted(true);
   };
 
-  // Show start screen if game hasn't started
-  if (!gameStarted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-6xl p-8">
-          <div className="text-center space-y-6">
-            <h1 className="font-display text-4xl font-bold text-brand-black mb-4">
-              🍕 Pizza Restaurant Challenge
-            </h1>
-            <p className="text-lg text-muted-foreground mb-6">
-              Ready to start your pizza restaurant? Make exact pizzas within 15 seconds!
-            </p>
-            
-            {/* Start Button */}
-            <Button
-              onClick={startGame}
-              className="px-8 py-4 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:scale-105 transition-all duration-300"
-            >
-              <span className="text-2xl mr-2">🚀</span>
-              Start Game
-            </Button>
-            
-            <Button onClick={onClose} variant="outline" className="ml-4 text-gray-600 hover:text-gray-800">
-              ⏭️ Skip Game
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -770,98 +740,122 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
           {/* Game Controls */}
           <div className="space-y-6">
-            {/* Current Order */}
-            {currentOrder && (
-              <Card className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-2xl">📋</div>
-                  <div className="text-2xl">{customerMood}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {currentOrder.ingredients.map(ingredientId => {
-                    const ingredient = INGREDIENTS.find(ing => ing.id === ingredientId);
-                    const isSelected = selectedIngredients.includes(ingredientId);
-                    return ingredient ? (
-                      <div key={ingredientId} className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
-                        isSelected ? 'bg-green-100 border-2 border-green-400 scale-105' : 'bg-white border border-gray-200'
-                      }`}>
-                        <span className="text-2xl">{ingredient.emoji}</span>
-                        <div className="flex-1">
-                          {isSelected && <span className="text-green-600 text-lg">✓</span>}
-                        </div>
+            {!gameStarted ? (
+              /* Start Game Interface */
+              <div className="text-center space-y-6">
+                <div className="text-6xl mb-4">🍕</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                  Pizza Restaurant Challenge
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Ready to start your pizza restaurant? Make exact pizzas within 15 seconds!
+                </p>
+                
+                <Button
+                  onClick={startGame}
+                  className="px-8 py-4 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:scale-105 transition-all duration-300"
+                >
+                  <span className="text-2xl mr-2">🚀</span>
+                  Start Game
+                </Button>
+              </div>
+            ) : (
+              /* Game Controls */
+              <>
+                {/* Current Order */}
+                {currentOrder && (
+                  <Card className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-2xl">📋</div>
+                      <div className="text-2xl">{customerMood}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      {currentOrder.ingredients.map(ingredientId => {
+                        const ingredient = INGREDIENTS.find(ing => ing.id === ingredientId);
+                        const isSelected = selectedIngredients.includes(ingredientId);
+                        return ingredient ? (
+                          <div key={ingredientId} className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+                            isSelected ? 'bg-green-100 border-2 border-green-400 scale-105' : 'bg-white border border-gray-200'
+                          }`}>
+                            <span className="text-2xl">{ingredient.emoji}</span>
+                            <div className="flex-1">
+                              {isSelected && <span className="text-green-600 text-lg">✓</span>}
+                            </div>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-2xl font-bold text-green-600">
+                        ${currentOrder.totalPrice * priceMultiplier}
+                        {priceMultiplier > 1 && (
+                          <span className="text-sm text-orange-600 ml-1">({priceMultiplier}x)</span>
+                        )}
                       </div>
-                    ) : null;
-                  })}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold text-green-600">
-                    ${currentOrder.totalPrice * priceMultiplier}
-                    {priceMultiplier > 1 && (
-                      <span className="text-sm text-orange-600 ml-1">({priceMultiplier}x)</span>
-                    )}
+                      <div className="text-sm text-gray-600">+ Speed Bonus</div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Ingredient Selection */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-2xl">🧑‍🍳</span>
+                    <div className="text-xl font-bold">Ingredients</div>
                   </div>
-                  <div className="text-sm text-gray-600">+ Speed Bonus</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {INGREDIENTS.map(ingredient => {
+                      const isSelected = selectedIngredients.includes(ingredient.id);
+                      const isRequired = currentOrder?.ingredients.includes(ingredient.id);
+                      
+                      return (
+                        <Button
+                          key={ingredient.id}
+                          onClick={() => toggleIngredient(ingredient.id)}
+                          variant={isSelected ? "default" : "outline"}
+                          className={`flex items-center justify-center gap-2 p-4 h-auto transition-all duration-200 ${
+                            isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'
+                          }`}
+                          style={{
+                            backgroundColor: isSelected ? ingredient.color : undefined
+                          }}
+                        >
+                          <span className="text-3xl">{ingredient.emoji}</span>
+                          <div className="text-center">
+                            <div className={`text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
+                              ${ingredient.price * priceMultiplier}
+                              {priceMultiplier > 1 && (
+                                <span className="text-xs opacity-75 block">({priceMultiplier}x)</span>
+                              )}
+                            </div>
+                            {isSelected && <div className="text-white text-lg">✓</div>}
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </Card>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={servePizza} 
+                    disabled={!isTimerActive}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  >
+                    <span className="text-2xl mr-2">🍕</span>
+                    SERVE
+                  </Button>
+                  <Button 
+                    onClick={resetPizza} 
+                    variant="outline"
+                    className="w-16 h-16 rounded-full bg-red-100 hover:bg-red-200 border-red-300"
+                  >
+                    <RotateCcw className="w-6 h-6 text-red-600" />
+                  </Button>
+                </div>
+              </>
             )}
-
-            {/* Ingredient Selection */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🧑‍🍳</span>
-                <div className="text-xl font-bold">Ingredients</div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {INGREDIENTS.map(ingredient => {
-                  const isSelected = selectedIngredients.includes(ingredient.id);
-                  const isRequired = currentOrder?.ingredients.includes(ingredient.id);
-                  
-                  return (
-                    <Button
-                      key={ingredient.id}
-                      onClick={() => toggleIngredient(ingredient.id)}
-                      variant={isSelected ? "default" : "outline"}
-                      className={`flex items-center justify-center gap-2 p-4 h-auto transition-all duration-200 ${
-                        isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'
-                      }`}
-                      style={{
-                        backgroundColor: isSelected ? ingredient.color : undefined
-                      }}
-                    >
-                      <span className="text-3xl">{ingredient.emoji}</span>
-                      <div className="text-center">
-                        <div className={`text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
-                          ${ingredient.price * priceMultiplier}
-                          {priceMultiplier > 1 && (
-                            <span className="text-xs opacity-75 block">({priceMultiplier}x)</span>
-                          )}
-                        </div>
-                        {isSelected && <div className="text-white text-lg">✓</div>}
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <Button 
-                onClick={servePizza} 
-                disabled={!isTimerActive}
-                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-              >
-                <span className="text-2xl mr-2">🍕</span>
-                SERVE
-              </Button>
-              <Button 
-                onClick={resetPizza} 
-                variant="outline"
-                className="w-16 h-16 rounded-full bg-red-100 hover:bg-red-200 border-red-300"
-              >
-                <RotateCcw className="w-6 h-6 text-red-600" />
-              </Button>
-            </div>
 
             <Button onClick={onClose} variant="outline" className="w-full mt-4 text-gray-600 hover:text-gray-800">
               ⏭️ Skip Game
