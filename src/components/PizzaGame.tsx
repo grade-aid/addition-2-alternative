@@ -45,7 +45,7 @@ class PizzaScene {
     
     // Camera setup
     this.camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    this.camera.position.set(5, 8, 5);
+    this.camera.position.set(0, 12, 8);
     this.camera.lookAt(0, 0, 0);
     
     // Renderer setup
@@ -78,7 +78,7 @@ class PizzaScene {
 
   private createPizzaBase() {
     // Pizza plate (ceramic-looking plate)
-    const plateGeometry = new THREE.CylinderGeometry(5.2, 5.2, 0.15, 32);
+    const plateGeometry = new THREE.CylinderGeometry(3.2, 3.2, 0.15, 32);
     const plateMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xF5F5DC, // Beige ceramic color
       shininess: 20
@@ -89,7 +89,7 @@ class PizzaScene {
     this.pizzaGroup.add(plate);
     
     // Pizza dough base with natural crust edge (single unified piece)
-    const baseGeometry = new THREE.CylinderGeometry(3.8, 4.1, 0.25, 32);
+    const baseGeometry = new THREE.CylinderGeometry(2.3, 2.6, 0.25, 32);
     const baseMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xE8C547, // Golden baked dough color
       shininess: 5
@@ -101,7 +101,7 @@ class PizzaScene {
     this.pizzaGroup.add(base);
     
     // Add subtle texture to the pizza surface
-    const surfaceGeometry = new THREE.CylinderGeometry(3.7, 3.7, 0.01, 32);
+    const surfaceGeometry = new THREE.CylinderGeometry(2.2, 2.2, 0.01, 32);
     const surfaceMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xF2D062, // Slightly lighter surface
       shininess: 2
@@ -112,7 +112,7 @@ class PizzaScene {
     this.pizzaGroup.add(surface);
   }
 
-  private generateRandomPositions(count: number, maxRadius: number = 2.8) {
+  private generateRandomPositions(count: number, maxRadius: number = 1.8) {
     const positions = [];
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -127,7 +127,7 @@ class PizzaScene {
   }
 
   private createSauce() {
-    const sauceGeometry = new THREE.CylinderGeometry(3.5, 3.5, 0.02, 32);
+    const sauceGeometry = new THREE.CylinderGeometry(2.1, 2.1, 0.02, 32);
     const sauceMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xC73E1A,
       shininess: 10 
