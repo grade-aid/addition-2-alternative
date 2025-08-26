@@ -285,9 +285,14 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               {/* Instructions */}
               <div className="text-center mt-6">
                 {activeColumn >= 0 && (
-                  <p className="text-lg font-medium text-primary animate-bounce-gentle">
-                    Click the highlighted column to calculate: Column {activeColumn + 1} (LEFT to RIGHT)
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-primary animate-bounce-gentle">
+                      👈 Click the LEFTMOST highlighted column to calculate: Column {activeColumn + 1}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Solving LEFT → RIGHT (Column 1, 2, 3...)
+                    </p>
+                  </div>
                 )}
                 {isComplete && (
                   <div className="flex items-center justify-center gap-2 text-secondary text-xl font-bold">
@@ -296,9 +301,14 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   </div>
                 )}
                 {activeColumn === -1 && !isComplete && (
-                  <p className="text-lg font-medium text-muted-foreground">
-                    Click "Start Solving" to begin!
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-muted-foreground">
+                      Click "Start Solving" to begin from the LEFT!
+                    </p>
+                    <p className="text-sm text-accent font-medium">
+                      ← We solve LEFT to RIGHT (not the traditional way) →
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
