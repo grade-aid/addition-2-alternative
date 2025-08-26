@@ -77,30 +77,39 @@ class PizzaScene {
   }
 
   private createPizzaBase() {
-    // Pizza plate (brown wooden plate)
-    const plateGeometry = new THREE.CylinderGeometry(5, 5, 0.1, 32);
-    const plateMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+    // Pizza plate (ceramic-looking plate)
+    const plateGeometry = new THREE.CylinderGeometry(5.2, 5.2, 0.15, 32);
+    const plateMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0xF5F5DC, // Beige ceramic color
+      shininess: 20
+    });
     const plate = new THREE.Mesh(plateGeometry, plateMaterial);
-    plate.position.y = -0.05;
+    plate.position.y = -0.075;
     plate.receiveShadow = true;
     this.pizzaGroup.add(plate);
     
-    // Pizza dough base
-    const baseGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 32);
-    const baseMaterial = new THREE.MeshPhongMaterial({ color: 0xD4A574 });
+    // Pizza dough base with natural crust edge (single unified piece)
+    const baseGeometry = new THREE.CylinderGeometry(3.8, 4.1, 0.25, 32);
+    const baseMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0xE8C547, // Golden baked dough color
+      shininess: 5
+    });
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
-    base.position.y = 0;
+    base.position.y = 0.125;
     base.castShadow = true;
     base.receiveShadow = true;
     this.pizzaGroup.add(base);
     
-    // Pizza crust edge
-    const crustGeometry = new THREE.TorusGeometry(4, 0.2, 8, 16);
-    const crustMaterial = new THREE.MeshPhongMaterial({ color: 0xC19660 });
-    const crust = new THREE.Mesh(crustGeometry, crustMaterial);
-    crust.position.y = 0.1;
-    crust.castShadow = true;
-    this.pizzaGroup.add(crust);
+    // Add subtle texture to the pizza surface
+    const surfaceGeometry = new THREE.CylinderGeometry(3.7, 3.7, 0.01, 32);
+    const surfaceMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0xF2D062, // Slightly lighter surface
+      shininess: 2
+    });
+    const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+    surface.position.y = 0.26;
+    surface.receiveShadow = true;
+    this.pizzaGroup.add(surface);
   }
 
   private generateRandomPositions(count: number, maxRadius: number = 2.8) {
@@ -119,9 +128,12 @@ class PizzaScene {
 
   private createSauce() {
     const sauceGeometry = new THREE.CylinderGeometry(3.5, 3.5, 0.02, 32);
-    const sauceMaterial = new THREE.MeshPhongMaterial({ color: 0xC73E1A });
+    const sauceMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0xC73E1A,
+      shininess: 10 
+    });
     const sauce = new THREE.Mesh(sauceGeometry, sauceMaterial);
-    sauce.position.y = 0.11; // On top of pizza base
+    sauce.position.y = 0.27; // On top of pizza surface
     sauce.castShadow = true;
     return [sauce];
   }
@@ -134,7 +146,7 @@ class PizzaScene {
       const cheeseGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.6);
       const cheeseMaterial = new THREE.MeshPhongMaterial({ color: 0xFFF8DC });
       const cheese = new THREE.Mesh(cheeseGeometry, cheeseMaterial);
-      cheese.position.set(pos.x, 0.13, pos.z); // On top of sauce
+      cheese.position.set(pos.x, 0.29, pos.z); // On top of sauce
       cheese.rotation.y = pos.rotation;
       cheese.castShadow = true;
       cheeseMeshes.push(cheese);
@@ -151,7 +163,7 @@ class PizzaScene {
       const pepperoniGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.03, 16);
       const pepperoniMaterial = new THREE.MeshPhongMaterial({ color: 0xB22222 });
       const pepperoni = new THREE.Mesh(pepperoniGeometry, pepperoniMaterial);
-      pepperoni.position.set(pos.x, 0.15, pos.z); // On top of cheese
+      pepperoni.position.set(pos.x, 0.32, pos.z); // On top of cheese
       pepperoni.rotation.y = pos.rotation;
       pepperoni.castShadow = true;
       pepperoniMeshes.push(pepperoni);
@@ -168,7 +180,7 @@ class PizzaScene {
       const mushroomGeometry = new THREE.BoxGeometry(0.5, 0.08, 0.3);
       const mushroomMaterial = new THREE.MeshPhongMaterial({ color: 0xD2B48C });
       const mushroom = new THREE.Mesh(mushroomGeometry, mushroomMaterial);
-      mushroom.position.set(pos.x, 0.15, pos.z);
+      mushroom.position.set(pos.x, 0.32, pos.z);
       mushroom.rotation.y = pos.rotation;
       mushroom.castShadow = true;
       mushroomMeshes.push(mushroom);
@@ -186,7 +198,7 @@ class PizzaScene {
       const color = Math.random() > 0.5 ? 0x228B22 : 0xDC143C;
       const pepperMaterial = new THREE.MeshPhongMaterial({ color });
       const pepper = new THREE.Mesh(pepperGeometry, pepperMaterial);
-      pepper.position.set(pos.x, 0.15, pos.z);
+      pepper.position.set(pos.x, 0.32, pos.z);
       pepper.rotation.y = pos.rotation;
       pepper.castShadow = true;
       pepperMeshes.push(pepper);
@@ -203,7 +215,7 @@ class PizzaScene {
       const oliveGeometry = new THREE.TorusGeometry(0.2, 0.08, 8, 16);
       const oliveMaterial = new THREE.MeshPhongMaterial({ color: 0x2F2F2F });
       const olive = new THREE.Mesh(oliveGeometry, oliveMaterial);
-      olive.position.set(pos.x, 0.15, pos.z);
+      olive.position.set(pos.x, 0.32, pos.z);
       olive.rotation.x = Math.PI / 2;
       olive.rotation.z = pos.rotation;
       olive.castShadow = true;
@@ -222,7 +234,7 @@ class PizzaScene {
       const sausageMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
       const sausage = new THREE.Mesh(sausageGeometry, sausageMaterial);
       const scale = 0.15 + Math.random() * 0.15;
-      sausage.position.set(pos.x, 0.15, pos.z);
+      sausage.position.set(pos.x, 0.32, pos.z);
       sausage.scale.setScalar(scale);
       sausage.castShadow = true;
       sausageMeshes.push(sausage);
@@ -243,7 +255,7 @@ class PizzaScene {
         opacity: 0.8 
       });
       const onion = new THREE.Mesh(onionGeometry, onionMaterial);
-      onion.position.set(pos.x, 0.15, pos.z);
+      onion.position.set(pos.x, 0.32, pos.z);
       onion.rotation.y = pos.rotation;
       onion.castShadow = true;
       onionMeshes.push(onion);
