@@ -556,71 +556,25 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   if (!gameStarted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-4xl p-8">
-          <div className="text-center space-y-8">
-            <div className="text-8xl mb-6">🍕</div>
-            <h1 className="font-display text-5xl font-bold text-brand-black mb-4">
-              Pizza Restaurant Challenge
+        <Card className="w-full max-w-6xl p-8">
+          <div className="text-center space-y-6">
+            <h1 className="font-display text-4xl font-bold text-brand-black mb-4">
+              🍕 Pizza Restaurant Challenge
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Welcome to your pizza restaurant! You have 2 days to serve customers and earn money. 
-              Make the exact pizzas customers order within the time limit!
+            <p className="text-lg text-muted-foreground mb-6">
+              Ready to start your pizza restaurant? Make exact pizzas within 15 seconds!
             </p>
-            
-            {/* Game Instructions */}
-            <div className="bg-blue-50 rounded-xl p-6 max-w-3xl mx-auto">
-              <h2 className="text-2xl font-bold text-blue-800 mb-4">📋 How to Play</h2>
-              <div className="grid md:grid-cols-2 gap-4 text-left">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">👀</span>
-                    <div>
-                      <div className="font-bold text-blue-700">Watch the Order</div>
-                      <div className="text-blue-600 text-sm">Check what ingredients the customer wants</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">🧑‍🍳</span>
-                    <div>
-                      <div className="font-bold text-blue-700">Select Ingredients</div>
-                      <div className="text-blue-600 text-sm">Click the exact ingredients shown in the order</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">⏱️</span>
-                    <div>
-                      <div className="font-bold text-blue-700">Beat the Timer</div>
-                      <div className="text-blue-600 text-sm">You have 15 seconds per order</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">💰</span>
-                    <div>
-                      <div className="font-bold text-blue-700">Earn Money</div>
-                      <div className="text-blue-600 text-sm">Faster service = bonus earnings!</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
             
             {/* Start Button */}
             <Button
               onClick={startGame}
-              className="px-12 py-6 text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 animate-fade-in"
+              className="px-8 py-4 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:scale-105 transition-all duration-300"
             >
-              <span className="text-3xl mr-3">🚀</span>
-              Start Day 1
-              <span className="text-3xl ml-3">🍕</span>
+              <span className="text-2xl mr-2">🚀</span>
+              Start Game
             </Button>
             
-            <Button 
-              onClick={onClose} 
-              variant="outline" 
-              className="mt-4 text-gray-600 hover:text-gray-800"
-            >
+            <Button onClick={onClose} variant="outline" className="ml-4 text-gray-600 hover:text-gray-800">
               ⏭️ Skip Game
             </Button>
           </div>
