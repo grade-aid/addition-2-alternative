@@ -447,7 +447,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       
       return () => clearInterval(timer);
     }
-  }, [isTimerActive]); // Remove timeLeft from dependencies to prevent constant re-creation
+  }, [isTimerActive, currentDay]); // Add currentDay to restart timer on day transitions
 
   // Start timer when new order appears
   useEffect(() => {
@@ -468,7 +468,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     } else {
       console.log('Timer not started - missing requirements');
     }
-  }, [currentOrderIndex, gameStarted]);
+  }, [currentOrderIndex, gameStarted, currentDay]);
 
   const nextOrder = () => {
     console.log('nextOrder called:', { 
@@ -487,7 +487,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       setCurrentDay(2);
       setCurrentOrderIndex(5); // Start Day 2 orders (index 5-9)
       setSelectedIngredients([]);
-      // day2Attempts should already be 0, but let's ensure it
+      // Reset timer states for Day 2
+      setIsTimerActive(false);
+      setTimeLeft(15);
       console.log('Day 2 starting with day2Attempts:', day2Attempts);
     } else if (currentDay === 2 && day2Attempts >= 5) {
       console.log('Day 2 completed, ending game');
