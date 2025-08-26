@@ -362,21 +362,16 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [day2Failed, setDay2Failed] = useState(0);
   
   // Timer states
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(20);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [orderFailed, setOrderFailed] = useState(false);
   
   // Visual feedback states
   const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
   
-  // Price multiplier system
+  // Price multiplier system - session-based cycling through [1, 4, 8]
+  const [sessionGameCount, setSessionGameCount] = useState(0);
   const [priceMultiplier, setPriceMultiplier] = useState(1);
-
-  // Load price multiplier from localStorage on component mount
-  useEffect(() => {
-    const gameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-    setPriceMultiplier(gameCount + 1);
-  }, []);
 
   // Generate random orders for each day
   const [orders] = useState<PizzaOrder[]>(() => {
@@ -405,9 +400,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setTimeLeft(prev => {
           const newTime = prev - 1;
           
-          // Update customer mood based on time (adjusted for 15 seconds)
-          if (newTime > 10) setCustomerMood('😊');
-          else if (newTime > 5) setCustomerMood('😐');
+          // Update customer mood based on time (adjusted for 20 seconds)
+          if (newTime > 15) setCustomerMood('😊');
+          else if (newTime > 8) setCustomerMood('😐');
           else setCustomerMood('😠');
           
           if (newTime <= 0) {
@@ -442,15 +437,17 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     console.log('Order change effect:', { currentOrder: currentOrder?.id, gameStarted, currentDay, currentOrderIndex, totalOrders: orders.length });
     if (currentOrder && gameStarted) {
       console.log('Starting timer for Day', currentDay, 'Order', currentOrder.id);
-      setTimeLeft(15);
+      setTimeLeft(20);
       setIsTimerActive(true);
       setCustomerMood('😊');
     } else if (!currentOrder && gameStarted && currentDay === 2) {
       // Fallback: if we're on Day 2 and don't have a current order, complete the game
       console.log('No current order on Day 2, completing game (fallback)');
-      // Save incremented game count to localStorage
-      const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-      localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+      // Cycle price multiplier for next game session
+      const nextCount = sessionGameCount + 1;
+      const multipliers = [1, 4, 8];
+      setPriceMultiplier(multipliers[nextCount % 3]);
+      setSessionGameCount(nextCount);
       console.log('Calling onComplete with earnings (order fallback):', { day1Earnings, day2Earnings });
       onComplete(day1Earnings, day2Earnings);
     }
@@ -467,14 +464,16 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setCurrentOrderIndex(5);
         setSelectedIngredients([]);
         // Explicit timer reset for Day 2
-        setTimeLeft(15);
+        setTimeLeft(20);
         setIsTimerActive(false); // Will be reactivated by the order change effect
       } else {
         // Game completed - immediately call onComplete
         console.log('Day 2 complete, finishing game');
-        // Save incremented game count to localStorage
-        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        // Cycle price multiplier for next game session
+        const nextCount = sessionGameCount + 1;
+        const multipliers = [1, 4, 8];
+        setPriceMultiplier(multipliers[nextCount % 3]);
+        setSessionGameCount(nextCount);
         console.log('Calling onComplete with earnings:', { day1Earnings, day2Earnings });
         onComplete(day1Earnings, day2Earnings);
         return; // Exit early to prevent further execution
@@ -484,9 +483,11 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       const nextIndex = currentOrderIndex + 1;
       if (nextIndex >= orders.length) {
         console.log('No more orders available, completing game');
-        // Save incremented game count to localStorage
-        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
-        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        // Cycle price multiplier for next game session
+        const nextCount = sessionGameCount + 1;
+        const multipliers = [1, 4, 8];
+        setPriceMultiplier(multipliers[nextCount % 3]);
+        setSessionGameCount(nextCount);
         console.log('Calling onComplete with earnings (fallback):', { day1Earnings, day2Earnings });
         onComplete(day1Earnings, day2Earnings);
         return;
@@ -720,7 +721,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                     stroke={timeLeft > 6 ? '#10b981' : timeLeft > 3 ? '#f59e0b' : '#ef4444'}
                     strokeWidth="8"
                     strokeLinecap="round"
-                    strokeDasharray={`${(timeLeft / 15) * 283} 283`}
+                    strokeDasharray={`${(timeLeft / 20) * 283} 283`}
                     className="transition-all duration-1000"
                   />
                 </svg>
@@ -749,7 +750,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                   Pizza Restaurant Challenge
                 </h2>
                 <p className="text-gray-600 mb-6">
-                  Ready to start your pizza restaurant? Make exact pizzas within 15 seconds!
+                  Ready to start your pizza restaurant? Make exact pizzas within 20 seconds!
                 </p>
                 
                 <Button
