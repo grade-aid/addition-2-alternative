@@ -439,17 +439,26 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
   // Start timer when new order appears - Enhanced with debug logging
   useEffect(() => {
-    console.log('Order change effect:', { currentOrder: currentOrder?.id, gameStarted, currentDay, currentOrderIndex });
+    console.log('Order change effect:', { currentOrder: currentOrder?.id, gameStarted, currentDay, currentOrderIndex, totalOrders: orders.length });
     if (currentOrder && gameStarted) {
       console.log('Starting timer for Day', currentDay, 'Order', currentOrder.id);
       setTimeLeft(15);
       setIsTimerActive(true);
       setCustomerMood('😊');
+    } else if (!currentOrder && gameStarted && currentDay === 2) {
+      // Fallback: if we're on Day 2 and don't have a current order, complete the game
+      console.log('No current order on Day 2, completing game (fallback)');
+      // Save incremented game count to localStorage
+      const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+      localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+      console.log('Calling onComplete with earnings (order fallback):', { day1Earnings, day2Earnings });
+      onComplete(day1Earnings, day2Earnings);
     }
-  }, [currentOrderIndex, gameStarted, currentDay]);
+  }, [currentOrderIndex, gameStarted, currentDay, currentOrder, orders.length, day1Earnings, day2Earnings, onComplete]);
 
   const nextOrder = () => {
-    console.log('nextOrder called:', { currentDay, totalAttemptsToday, day1Attempts, day2Attempts });
+    console.log('nextOrder called:', { currentDay, totalAttemptsToday, day1Attempts, day2Attempts, currentOrderIndex });
+    
     // Check if day is complete (5 total attempts)
     if (totalAttemptsToday >= 5) {
       if (currentDay === 1) {
@@ -468,10 +477,23 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
         console.log('Calling onComplete with earnings:', { day1Earnings, day2Earnings });
         onComplete(day1Earnings, day2Earnings);
+        return; // Exit early to prevent further execution
       }
     } else {
-      console.log('Moving to next order:', currentOrderIndex + 1);
-      setCurrentOrderIndex(prev => prev + 1);
+      // Check bounds to prevent going beyond available orders
+      const nextIndex = currentOrderIndex + 1;
+      if (nextIndex >= orders.length) {
+        console.log('No more orders available, completing game');
+        // Save incremented game count to localStorage
+        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
+        console.log('Calling onComplete with earnings (fallback):', { day1Earnings, day2Earnings });
+        onComplete(day1Earnings, day2Earnings);
+        return;
+      }
+      
+      console.log('Moving to next order:', nextIndex);
+      setCurrentOrderIndex(nextIndex);
       setSelectedIngredients([]);
     }
   };
