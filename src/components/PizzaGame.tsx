@@ -44,8 +44,8 @@ class PizzaScene {
     this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     
     // Camera setup
-    this.camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 12, 8);
+    this.camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    this.camera.position.set(0, 8, 6);
     this.camera.lookAt(0, 0, 0);
     
     // Renderer setup
