@@ -373,6 +373,31 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   // Price multiplier system
   const [priceMultiplier, setPriceMultiplier] = useState(1);
 
+  // Reset all game states when component mounts to ensure fresh start for each level
+  useEffect(() => {
+    const sessionCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10) + 1;
+    console.log(`PizzaGame SESSION ${sessionCount} - resetting all states for fresh session`);
+    setGameStarted(false);
+    setCurrentDay(1);
+    setPizzasSoldDay1(0);
+    setPizzasSoldDay2(0);
+    setSelectedIngredients([]);
+    setCurrentOrderIndex(0);
+    setDay1Earnings(0);
+    setDay2Earnings(0);
+    setShowOrderComplete(false);
+    setDay1Attempts(0);
+    setDay2Attempts(0);
+    setDay1Failed(0);
+    setDay2Failed(0);
+    setTimeLeft(15);
+    setIsTimerActive(false);
+    setOrderFailed(false);
+    setCustomerMood('😊');
+    setGameCompleted(false);
+    console.log(`SESSION ${sessionCount} - All game states reset to initial values - ready for new session`);
+  }, []); // Run only once when component mounts
+
   // Load price multiplier from localStorage on component mount
   useEffect(() => {
     const gameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);

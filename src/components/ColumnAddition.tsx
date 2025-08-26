@@ -293,8 +293,17 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     if (correct) {
       setCorrectAnswerCount(prev => {
         const newCount = prev + 1;
+        const pizzaGameLevel = Math.floor(newCount / 2);
+        
+        console.log(`Practice progress: ${newCount} correct answers`, {
+          correctAnswers: newCount,
+          shouldTriggerGame: newCount % 2 === 0 && newCount > 0,
+          pizzaGameLevel: pizzaGameLevel
+        });
+        
         // Trigger pizza game every 2 correct answers
         if (newCount % 2 === 0 && newCount > 0) {
+          console.log(`🍕 TRIGGERING PIZZA GAME LEVEL ${pizzaGameLevel} 🍕`);
           setTimeout(() => setPhase('pizza-game'), 1500);
         }
         return newCount;
