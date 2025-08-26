@@ -210,7 +210,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   // Auto-play timer
   useEffect(() => {
     if (isAutoPlaying) {
-      const timer = setTimeout(autoPlay, 2000); // 2 second intervals
+      const timer = setTimeout(autoPlay, 4000); // 4 second intervals (slower)
       return () => clearTimeout(timer);
     }
   }, [autoPlay, isAutoPlaying]);
