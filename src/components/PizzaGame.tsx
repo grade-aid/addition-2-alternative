@@ -71,7 +71,7 @@ function Cheese() {
   const positions = useMemo(() => 
     Array.from({ length: 18 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.2; // Stay within pizza bounds
+      const radius = Math.random() * 2.8; // Stay within pizza bounds
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
@@ -96,7 +96,7 @@ function Pepperoni() {
   const positions = useMemo(() => 
     Array.from({ length: 10 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.0; // Stay within pizza bounds
+      const radius = Math.random() * 2.8; // Stay within pizza bounds
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
@@ -121,7 +121,7 @@ function Mushrooms() {
   const positions = useMemo(() => 
     Array.from({ length: 8 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.0;
+      const radius = Math.random() * 2.8;
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
@@ -146,7 +146,7 @@ function Peppers() {
   const positions = useMemo(() => 
     Array.from({ length: 10 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.0;
+      const radius = Math.random() * 2.8;
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
@@ -172,7 +172,7 @@ function Olives() {
   const positions = useMemo(() => 
     Array.from({ length: 8 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.0;
+      const radius = Math.random() * 2.8;
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
@@ -197,7 +197,7 @@ function Sausage() {
   const positions = useMemo(() => 
     Array.from({ length: 14 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.0;
+      const radius = Math.random() * 2.8;
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
@@ -223,7 +223,7 @@ function Onions() {
   const positions = useMemo(() => 
     Array.from({ length: 8 }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 3.0;
+      const radius = Math.random() * 2.8;
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
