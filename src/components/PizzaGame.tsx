@@ -352,6 +352,12 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [day2Earnings, setDay2Earnings] = useState(0);
   const [showOrderComplete, setShowOrderComplete] = useState(false);
   
+  // Order attempt tracking
+  const [day1Attempts, setDay1Attempts] = useState(0);
+  const [day2Attempts, setDay2Attempts] = useState(0);
+  const [day1Failed, setDay1Failed] = useState(0);
+  const [day2Failed, setDay2Failed] = useState(0);
+  
   // Timer states
   const [timeLeft, setTimeLeft] = useState(15);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -390,6 +396,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
   const currentOrder = orders[currentOrderIndex];
   const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
+  const totalAttemptsToday = currentDay === 1 ? day1Attempts : day2Attempts;
 
   // Timer effect
   useEffect(() => {
@@ -409,6 +416,14 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             setOrderFailed(true);
             setTimeout(() => {
               setOrderFailed(false);
+              // Track failed order
+              if (currentDay === 1) {
+                setDay1Failed(prev => prev + 1);
+                setDay1Attempts(prev => prev + 1);
+              } else {
+                setDay2Failed(prev => prev + 1);
+                setDay2Attempts(prev => prev + 1);
+              }
               nextOrder();
             }, 2000);
             return 0; // Ensure we return 0 to stop the timer
@@ -432,7 +447,8 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   }, [currentOrderIndex]);
 
   const nextOrder = () => {
-    if (totalPizzasToday >= 4) {
+    // Check if day is complete (5 total attempts)
+    if (totalAttemptsToday >= 5) {
       if (currentDay === 1) {
         setCurrentDay(2);
         setCurrentOrderIndex(5);
@@ -511,9 +527,11 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       if (currentDay === 1) {
         setPizzasSoldDay1(prev => prev + 1);
         setDay1Earnings(prev => prev + totalEarnings);
+        setDay1Attempts(prev => prev + 1);
       } else {
         setPizzasSoldDay2(prev => prev + 1);  
         setDay2Earnings(prev => prev + totalEarnings);
+        setDay2Attempts(prev => prev + 1);
       }
 
       setShowOrderComplete(true);
@@ -563,21 +581,43 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             <div className="flex items-center gap-2">
               <span className="text-2xl">☀️</span>
               <div className="flex gap-1">
-                {Array.from({length: 5}, (_, i) => (
-                  <div key={i} className={`w-3 h-3 rounded-full ${i < pizzasSoldDay1 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                ))}
+                {Array.from({length: 5}, (_, i) => {
+                  let color = 'bg-gray-300'; // Pending
+                  if (i < pizzasSoldDay1) {
+                    color = 'bg-green-500'; // Success
+                  } else if (i < day1Attempts) {
+                    color = 'bg-red-500'; // Failed
+                  }
+                  return (
+                    <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
+                  );
+                })}
               </div>
               <span className="text-lg font-bold">${day1Earnings}</span>
+              {day1Failed > 0 && (
+                <span className="text-sm text-red-600">(-{day1Failed})</span>
+              )}
             </div>
             
             <div className="flex items-center gap-2">
               <span className="text-2xl">🌙</span>
               <div className="flex gap-1">
-                {Array.from({length: 5}, (_, i) => (
-                  <div key={i} className={`w-3 h-3 rounded-full ${i < pizzasSoldDay2 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                ))}
+                {Array.from({length: 5}, (_, i) => {
+                  let color = 'bg-gray-300'; // Pending
+                  if (i < pizzasSoldDay2) {
+                    color = 'bg-green-500'; // Success
+                  } else if (i < day2Attempts) {
+                    color = 'bg-red-500'; // Failed
+                  }
+                  return (
+                    <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
+                  );
+                })}
               </div>
               <span className="text-lg font-bold">${day2Earnings}</span>
+              {day2Failed > 0 && (
+                <span className="text-sm text-red-600">(-{day2Failed})</span>
+              )}
             </div>
           </div>
         </div>
