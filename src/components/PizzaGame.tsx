@@ -381,20 +381,32 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
   // Generate random orders for each day
   const [orders] = useState<PizzaOrder[]>(() => {
-    return Array.from({ length: 10 }, (_, i) => {
+    const generatedOrders = Array.from({ length: 10 }, (_, i) => {
       const numIngredients = Math.floor(Math.random() * 4) + 2; // 2-5 ingredients
       const shuffled = [...INGREDIENTS].sort(() => 0.5 - Math.random());
       const selectedIngredients = shuffled.slice(0, numIngredients);
       
-      return {
+      const order = {
         id: i + 1,
         ingredients: selectedIngredients.map(ing => ing.id),
         totalPrice: (selectedIngredients.reduce((sum, ing) => sum + ing.price, 0) + 5) // Base pizza price $5
       };
+      
+      console.log(`Generated order ${order.id}:`, order);
+      return order;
     });
+    
+    console.log('All orders generated:', generatedOrders);
+    return generatedOrders;
   });
 
   const currentOrder = orders[currentOrderIndex];
+  console.log('Current order state:', { 
+    currentOrderIndex, 
+    currentOrder: currentOrder ? `Order ${currentOrder.id}` : 'undefined',
+    ordersLength: orders.length,
+    currentDay 
+  });
   const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
   const totalAttemptsToday = currentDay === 1 ? day1Attempts : day2Attempts;
 
@@ -439,21 +451,43 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
   // Start timer when new order appears
   useEffect(() => {
+    console.log('Timer effect triggered:', { 
+      currentOrder: currentOrder ? `Order ${currentOrder.id}` : 'null',
+      currentOrderIndex,
+      gameStarted,
+      currentDay,
+      timeLeft,
+      isTimerActive 
+    });
+    
     if (currentOrder && gameStarted) {
+      console.log('Starting timer for order:', currentOrder.id);
       setTimeLeft(15);
       setIsTimerActive(true);
       setCustomerMood('😊');
+    } else {
+      console.log('Timer not started - missing requirements');
     }
   }, [currentOrderIndex, gameStarted]);
 
   const nextOrder = () => {
+    console.log('nextOrder called:', { 
+      currentDay, 
+      totalAttemptsToday, 
+      currentOrderIndex,
+      day1Attempts,
+      day2Attempts 
+    });
+    
     // Check if day is complete (5 total attempts)
     if (totalAttemptsToday >= 5) {
       if (currentDay === 1) {
+        console.log('Moving from day 1 to day 2');
         setCurrentDay(2);
         setCurrentOrderIndex(5);
         setSelectedIngredients([]);
       } else {
+        console.log('Game completed');
         // Game completed - show celebration before calling onComplete
         setGameCompleted(true);
         setTimeout(() => {
@@ -464,6 +498,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         }, 4000); // Show celebration for 4 seconds
       }
     } else {
+      console.log('Moving to next order');
       setCurrentOrderIndex(prev => prev + 1);
       setSelectedIngredients([]);
     }
