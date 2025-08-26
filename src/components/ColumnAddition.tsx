@@ -358,10 +358,12 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const handlePizzaGameComplete = (day1: number, day2: number) => {
+    console.log('handlePizzaGameComplete called with:', { day1, day2 });
     setDay1Earnings(day1);
     setDay2Earnings(day2);
     setPhase('earnings-calculation');
     setShowEarningsCalculation(true);
+    console.log('Set phase to earnings-calculation');
   };
 
   // Initialize earnings calculation when entering that phase

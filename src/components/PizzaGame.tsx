@@ -491,9 +491,11 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       console.log('Day 2 starting with day2Attempts:', day2Attempts);
     } else if (currentDay === 2 && day2Attempts >= 5) {
       console.log('Day 2 completed, ending game');
+      console.log('Final earnings:', { day1Earnings, day2Earnings });
       // Game completed - show celebration before calling onComplete
       setGameCompleted(true);
       setTimeout(() => {
+        console.log('Calling onComplete with earnings:', day1Earnings, day2Earnings);
         // Save incremented game count to localStorage
         const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
         localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
