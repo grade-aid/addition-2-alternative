@@ -298,6 +298,13 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
         }
         return newCount;
       });
+      
+      // Auto advance to next question after a short delay
+      setTimeout(() => {
+        if (practiceIndex < practiceQuestions.length - 1) {
+          nextPractice();
+        }
+      }, 1500);
     }
   };
 
@@ -605,11 +612,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <Button onClick={checkAnswer} className="grade-button">
                   Check Answer
                 </Button>
-                {isCorrect && practiceIndex < practiceQuestions.length - 1 && (
-                  <Button onClick={nextPractice} className="grade-button accent">
-                    Next Question <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                )}
               </>
             )}
           </div>
