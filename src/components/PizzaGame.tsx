@@ -77,19 +77,8 @@ class PizzaScene {
   }
 
   private createPizzaBase() {
-    // Pizza plate (ceramic-looking plate)
-    const plateGeometry = new THREE.CylinderGeometry(3.2, 3.2, 0.15, 32);
-    const plateMaterial = new THREE.MeshPhongMaterial({ 
-      color: 0xF5F5DC, // Beige ceramic color
-      shininess: 20
-    });
-    const plate = new THREE.Mesh(plateGeometry, plateMaterial);
-    plate.position.y = -0.075;
-    plate.receiveShadow = true;
-    this.pizzaGroup.add(plate);
-    
-    // Main pizza base (flat bottom part)
-    const baseGeometry = new THREE.CylinderGeometry(2.2, 2.2, 0.15, 32);
+    // Main pizza base (flat bottom part) - now full size without plate
+    const baseGeometry = new THREE.CylinderGeometry(3.2, 3.2, 0.15, 32);
     const baseMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xE8A317, // Golden pizza base color
       shininess: 3
@@ -100,8 +89,8 @@ class PizzaScene {
     base.receiveShadow = true;
     this.pizzaGroup.add(base);
     
-    // Create puffy crust ring around the edge
-    const crustRingGeometry = new THREE.TorusGeometry(2.0, 0.25, 16, 32);
+    // Create puffy crust ring around the edge - scaled up
+    const crustRingGeometry = new THREE.TorusGeometry(2.9, 0.35, 16, 32);
     const crustMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xD2691E, // Rich golden-brown crust color
       shininess: 5
@@ -113,8 +102,8 @@ class PizzaScene {
     crustRing.receiveShadow = true;
     this.pizzaGroup.add(crustRing);
     
-    // Pizza surface (where ingredients go) - matches reference image proportions
-    const surfaceGeometry = new THREE.CylinderGeometry(1.75, 1.75, 0.05, 32);
+    // Pizza surface (where ingredients go) - scaled up
+    const surfaceGeometry = new THREE.CylinderGeometry(2.5, 2.5, 0.05, 32);
     const surfaceMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xF5C842, // Bright golden surface like in reference
       shininess: 2
@@ -125,7 +114,7 @@ class PizzaScene {
     this.pizzaGroup.add(surface);
   }
 
-  private generateRandomPositions(count: number, maxRadius: number = 1.6) {
+  private generateRandomPositions(count: number, maxRadius: number = 2.3) {
     const positions = [];
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -140,7 +129,7 @@ class PizzaScene {
   }
 
   private createSauce() {
-    const sauceGeometry = new THREE.CylinderGeometry(1.65, 1.65, 0.03, 32);
+    const sauceGeometry = new THREE.CylinderGeometry(2.4, 2.4, 0.03, 32);
     const sauceMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xC73E1A,
       shininess: 10 
