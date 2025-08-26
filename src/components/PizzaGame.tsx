@@ -698,7 +698,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 3D Pizza Viewer with Timer */}
-          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4 relative">
+          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl relative overflow-hidden">
             {/* Timer Ring */}
             <div className="absolute top-8 left-8 z-10">
               <div className="relative w-20 h-20">
