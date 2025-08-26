@@ -487,9 +487,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       setCurrentDay(2);
       setCurrentOrderIndex(5); // Start Day 2 orders (index 5-9)
       setSelectedIngredients([]);
-      // Reset timer states for Day 2
-      setIsTimerActive(false);
-      setTimeLeft(15);
+      // Timer will restart automatically via useEffect when currentDay changes
       console.log('Day 2 starting with day2Attempts:', day2Attempts);
     } else if (currentDay === 2 && day2Attempts >= 5) {
       console.log('Day 2 completed, ending game');
