@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { ArrowRight, RotateCcw, CheckCircle } from 'lucide-react';
+import { ArrowRight, RotateCcw, CheckCircle, Sparkles, Zap } from 'lucide-react';
 import * as THREE from 'three';
 
 interface Ingredient {
@@ -351,6 +351,18 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [day1Earnings, setDay1Earnings] = useState(0);
   const [day2Earnings, setDay2Earnings] = useState(0);
   const [showOrderComplete, setShowOrderComplete] = useState(false);
+  
+  // Timer states
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [orderFailed, setOrderFailed] = useState(false);
+  
+  // Auto-complete states
+  const [autoCompleteUses, setAutoCompleteUses] = useState(3);
+  const [showSparkles, setShowSparkles] = useState(false);
+  
+  // Visual feedback states
+  const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
 
   // Generate random orders for each day
   const [orders] = useState<PizzaOrder[]>(() => {
@@ -369,6 +381,60 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
   const currentOrder = orders[currentOrderIndex];
   const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
+
+  // Timer effect
+  useEffect(() => {
+    if (isTimerActive && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          const newTime = prev - 1;
+          
+          // Update customer mood based on time
+          if (newTime > 12) setCustomerMood('😊');
+          else if (newTime > 6) setCustomerMood('😐');
+          else setCustomerMood('😠');
+          
+          if (newTime <= 0) {
+            // Order failed
+            setOrderFailed(true);
+            setIsTimerActive(false);
+            setTimeout(() => {
+              setOrderFailed(false);
+              nextOrder();
+            }, 2000);
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [isTimerActive, timeLeft]);
+
+  // Start timer when new order appears
+  useEffect(() => {
+    if (currentOrder) {
+      setTimeLeft(20);
+      setIsTimerActive(true);
+      setCustomerMood('😊');
+    }
+  }, [currentOrderIndex]);
+
+  const nextOrder = () => {
+    if (totalPizzasToday >= 4) {
+      if (currentDay === 1) {
+        setCurrentDay(2);
+        setCurrentOrderIndex(5);
+        setSelectedIngredients([]);
+      } else {
+        onComplete(day1Earnings, day2Earnings);
+      }
+    } else {
+      setCurrentOrderIndex(prev => prev + 1);
+      setSelectedIngredients([]);
+    }
+  };
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -413,40 +479,43 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   };
 
   const servePizza = () => {
-    if (!currentOrder) return;
+    if (!currentOrder || !isTimerActive) return;
 
     // Check if pizza matches the order
     const orderMatches = currentOrder.ingredients.every(ing => selectedIngredients.includes(ing)) &&
                         selectedIngredients.every(ing => currentOrder.ingredients.includes(ing));
 
     if (orderMatches) {
+      setIsTimerActive(false);
+      
+      // Calculate bonus for time remaining
+      const timeBonus = Math.floor(timeLeft / 2);
+      const totalEarnings = currentOrder.totalPrice + timeBonus;
+      
       if (currentDay === 1) {
         setPizzasSoldDay1(prev => prev + 1);
-        setDay1Earnings(prev => prev + currentOrder.totalPrice);
+        setDay1Earnings(prev => prev + totalEarnings);
       } else {
         setPizzasSoldDay2(prev => prev + 1);  
-        setDay2Earnings(prev => prev + currentOrder.totalPrice);
+        setDay2Earnings(prev => prev + totalEarnings);
       }
 
       setShowOrderComplete(true);
       setTimeout(() => {
         setShowOrderComplete(false);
-        
-        if (totalPizzasToday >= 4) { // 5 pizzas total (this will be the 5th)
-          if (currentDay === 1) {
-            setCurrentDay(2);
-            setCurrentOrderIndex(5); // Start day 2 orders
-            setSelectedIngredients([]);
-          } else {
-            // Game complete
-            onComplete(day1Earnings + currentOrder.totalPrice, day2Earnings + currentOrder.totalPrice);
-          }
-        } else {
-          setCurrentOrderIndex(prev => prev + 1);
-          setSelectedIngredients([]);
-        }
+        nextOrder();
       }, 1500);
     }
+  };
+
+  const autoCompletePizza = () => {
+    if (autoCompleteUses <= 0 || !currentOrder) return;
+    
+    setAutoCompleteUses(prev => prev - 1);
+    setSelectedIngredients([...currentOrder.ingredients]);
+    setShowSparkles(true);
+    
+    setTimeout(() => setShowSparkles(false), 1000);
   };
 
   const resetPizza = () => {
@@ -457,35 +526,115 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-6xl p-8">
         <div className="text-center mb-6">
-          <h1 className="font-display text-4xl font-bold text-brand-black mb-2">
-            🍕 Pizza Restaurant - Day {currentDay}
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Serve 5 pizzas each day to earn money!
-          </p>
-          <div className="flex justify-center gap-8 mt-4">
-            <div className="text-lg">
-              <span className="font-bold">Day 1:</span> {pizzasSoldDay1}/5 pizzas - ${day1Earnings}
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="text-4xl">{currentDay === 1 ? '☀️' : '🌙'}</div>
+            <h1 className="font-display text-4xl font-bold text-brand-black">
+              🍕 Day {currentDay}
+            </h1>
+            <div className="text-4xl">{customerMood}</div>
+          </div>
+          
+          <div className="flex justify-center gap-8">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">☀️</span>
+              <div className="flex gap-1">
+                {Array.from({length: 5}, (_, i) => (
+                  <div key={i} className={`w-3 h-3 rounded-full ${i < pizzasSoldDay1 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                ))}
+              </div>
+              <span className="text-lg font-bold">${day1Earnings}</span>
             </div>
-            <div className="text-lg">
-              <span className="font-bold">Day 2:</span> {pizzasSoldDay2}/5 pizzas - ${day2Earnings}
+            
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🌙</span>
+              <div className="flex gap-1">
+                {Array.from({length: 5}, (_, i) => (
+                  <div key={i} className={`w-3 h-3 rounded-full ${i < pizzasSoldDay2 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                ))}
+              </div>
+              <span className="text-lg font-bold">${day2Earnings}</span>
             </div>
           </div>
         </div>
 
         {showOrderComplete && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-3xl text-center">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-green-600">Order Complete!</h2>
-              <p className="text-lg">+${currentOrder?.totalPrice}</p>
+            <div className="bg-white p-8 rounded-3xl text-center animate-scale-in">
+              <div className="text-6xl mb-4">✅</div>
+              <div className="text-4xl font-bold text-green-600 mb-2">+${currentOrder?.totalPrice + Math.floor(timeLeft / 2)}</div>
+              <div className="text-lg text-gray-600">⚡ Speed Bonus: +${Math.floor(timeLeft / 2)}</div>
+            </div>
+          </div>
+        )}
+
+        {orderFailed && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-3xl text-center animate-scale-in">
+              <div className="text-6xl mb-4">❌</div>
+              <div className="text-2xl font-bold text-red-600">Time's Up!</div>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 3D Pizza Viewer */}
-          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4">
+          {/* 3D Pizza Viewer with Timer */}
+          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4 relative">
+            {/* Timer Ring */}
+            <div className="absolute top-8 left-8 z-10">
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.3)"
+                    strokeWidth="8"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke={timeLeft > 12 ? '#10b981' : timeLeft > 6 ? '#f59e0b' : '#ef4444'}
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(timeLeft / 20) * 283} 283`}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className={`text-2xl font-bold ${timeLeft <= 5 ? 'animate-pulse text-red-600' : 'text-gray-700'}`}>
+                    {timeLeft}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Auto-Complete Button */}
+            <div className="absolute top-8 right-8 z-10">
+              <Button
+                onClick={autoCompletePizza}
+                disabled={autoCompleteUses <= 0 || !currentOrder}
+                className={`w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg transition-all duration-300 ${showSparkles ? 'animate-pulse scale-110' : ''}`}
+                title={`Auto-Complete (${autoCompleteUses} uses left)`}
+              >
+                <div className="relative">
+                  <Sparkles className="w-6 h-6" />
+                  {showSparkles && (
+                    <div className="absolute -inset-2 animate-ping">
+                      <Sparkles className="w-10 h-10 text-yellow-300" />
+                    </div>
+                  )}
+                </div>
+              </Button>
+              <div className="flex justify-center mt-1 gap-1">
+                {Array.from({length: 3}, (_, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full ${i < autoCompleteUses ? 'bg-purple-500' : 'bg-gray-300'}`} />
+                ))}
+              </div>
+            </div>
+
             <canvas 
               ref={canvasRef}
               className="w-full h-full rounded-xl"
@@ -497,56 +646,92 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           <div className="space-y-6">
             {/* Current Order */}
             {currentOrder && (
-              <Card className="p-4 bg-yellow-50 border-yellow-200">
-                <h3 className="text-xl font-bold mb-3">Order #{currentOrder.id - (currentDay === 2 ? 5 : 0)}</h3>
+              <Card className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-2xl">📋</div>
+                  <div className="text-2xl">{customerMood}</div>
+                </div>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {currentOrder.ingredients.map(ingredientId => {
                     const ingredient = INGREDIENTS.find(ing => ing.id === ingredientId);
+                    const isSelected = selectedIngredients.includes(ingredientId);
                     return ingredient ? (
-                      <div key={ingredientId} className="flex items-center gap-2 p-2 bg-white rounded-lg">
-                        <span className="text-xl">{ingredient.emoji}</span>
-                        <span className="text-sm">{ingredient.name}</span>
+                      <div key={ingredientId} className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+                        isSelected ? 'bg-green-100 border-2 border-green-400 scale-105' : 'bg-white border border-gray-200'
+                      }`}>
+                        <span className="text-2xl">{ingredient.emoji}</span>
+                        <div className="flex-1">
+                          {isSelected && <span className="text-green-600 text-lg">✓</span>}
+                        </div>
                       </div>
                     ) : null;
                   })}
                 </div>
-                <p className="text-lg font-bold text-green-600">Total: ${currentOrder.totalPrice}</p>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold text-green-600">${currentOrder.totalPrice}</div>
+                  <div className="text-sm text-gray-600">+ Speed Bonus</div>
+                </div>
               </Card>
             )}
 
             {/* Ingredient Selection */}
             <div>
-              <h3 className="text-xl font-bold mb-4">Select Ingredients:</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-2xl">🧑‍🍳</span>
+                <div className="text-xl font-bold">Ingredients</div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                {INGREDIENTS.map(ingredient => (
-                  <Button
-                    key={ingredient.id}
-                    onClick={() => toggleIngredient(ingredient.id)}
-                    variant={selectedIngredients.includes(ingredient.id) ? "default" : "outline"}
-                    className="flex items-center gap-2 p-3 h-auto"
-                  >
-                    <span className="text-xl">{ingredient.emoji}</span>
-                    <div className="text-left">
-                      <div className="text-sm font-medium">{ingredient.name}</div>
-                      <div className="text-xs text-muted-foreground">${ingredient.price}</div>
-                    </div>
-                  </Button>
-                ))}
+                {INGREDIENTS.map(ingredient => {
+                  const isSelected = selectedIngredients.includes(ingredient.id);
+                  const isRequired = currentOrder?.ingredients.includes(ingredient.id);
+                  
+                  return (
+                    <Button
+                      key={ingredient.id}
+                      onClick={() => toggleIngredient(ingredient.id)}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`flex items-center justify-center gap-2 p-4 h-auto transition-all duration-200 ${
+                        isRequired ? 'ring-2 ring-yellow-400 ring-offset-2 animate-pulse' : ''
+                      } ${isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'}`}
+                      style={{
+                        backgroundColor: isSelected ? ingredient.color : undefined,
+                        borderColor: isRequired ? '#fbbf24' : undefined
+                      }}
+                    >
+                      <span className="text-3xl">{ingredient.emoji}</span>
+                      <div className="text-center">
+                        <div className={`text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
+                          ${ingredient.price}
+                        </div>
+                        {isSelected && <div className="text-white text-lg">✓</div>}
+                      </div>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <Button onClick={servePizza} className="flex-1 grade-button accent">
-                Serve Pizza 🍕
+              <Button 
+                onClick={servePizza} 
+                disabled={!isTimerActive}
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
+                <span className="text-2xl mr-2">🍕</span>
+                SERVE
               </Button>
-              <Button onClick={resetPizza} variant="outline">
-                <RotateCcw className="w-4 h-4" />
+              <Button 
+                onClick={resetPizza} 
+                variant="outline"
+                className="w-16 h-16 rounded-full bg-red-100 hover:bg-red-200 border-red-300"
+              >
+                <RotateCcw className="w-6 h-6 text-red-600" />
               </Button>
             </div>
 
-            <Button onClick={onClose} variant="outline" className="w-full">
-              Skip Game
+            <Button onClick={onClose} variant="outline" className="w-full mt-4 text-gray-600 hover:text-gray-800">
+              ⏭️ Skip Game
             </Button>
           </div>
         </div>
