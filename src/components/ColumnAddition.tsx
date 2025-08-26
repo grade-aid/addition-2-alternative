@@ -363,9 +363,9 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     
     // Create the correct answer array (right-aligned)
     const correctAnswer = new Array(maxLength).fill('');
-    const paddedTotal = totalStr.padStart(maxLength, '');
+    const paddedTotal = totalStr.padStart(maxLength, ' ');
     for (let i = 0; i < maxLength; i++) {
-      if (paddedTotal[i].trim()) {
+      if (paddedTotal[i] && paddedTotal[i].trim()) {
         correctAnswer[i] = paddedTotal[i];
       }
     }
