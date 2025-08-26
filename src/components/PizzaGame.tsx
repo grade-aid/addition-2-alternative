@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { ArrowRight, RotateCcw, CheckCircle, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, RotateCcw, CheckCircle } from 'lucide-react';
 import * as THREE from 'three';
 
 interface Ingredient {
@@ -363,10 +363,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [orderFailed, setOrderFailed] = useState(false);
   
-  // Auto-complete states
-  const [autoCompleteUses, setAutoCompleteUses] = useState(3);
-  const [showSparkles, setShowSparkles] = useState(false);
-  
   // Visual feedback states
   const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -454,8 +450,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setCurrentDay(2);
         setCurrentOrderIndex(5);
         setSelectedIngredients([]);
-        // Reset auto-complete uses for day 2
-        setAutoCompleteUses(3);
       } else {
         // Game completed - show celebration before calling onComplete
         setGameCompleted(true);
@@ -545,16 +539,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         nextOrder();
       }, 1500);
     }
-  };
-
-  const autoCompletePizza = () => {
-    if (autoCompleteUses <= 0 || !currentOrder) return;
-    
-    setAutoCompleteUses(prev => prev - 1);
-    setSelectedIngredients([...currentOrder.ingredients]);
-    setShowSparkles(true);
-    
-    setTimeout(() => setShowSparkles(false), 1000);
   };
 
   const resetPizza = () => {
@@ -739,31 +723,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
               </div>
             </div>
 
-            {/* Auto-Complete Button */}
-            <div className="absolute top-8 right-8 z-10">
-              <Button
-                onClick={autoCompletePizza}
-                disabled={autoCompleteUses <= 0 || !currentOrder}
-                className={`w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg transition-all duration-300 ${showSparkles ? 'animate-pulse scale-110' : ''}`}
-                title={`Auto-Complete (${autoCompleteUses} uses left)`}
-              >
-                <div className="relative">
-                  <Sparkles className="w-6 h-6" />
-                  {showSparkles && (
-                    <div className="absolute -inset-2 animate-ping">
-                      <Sparkles className="w-10 h-10 text-yellow-300" />
-                    </div>
-                  )}
-                </div>
-              </Button>
-              <div className="flex justify-center mt-1 gap-1">
-                {Array.from({length: 3}, (_, i) => (
-                  <div key={i} className={`w-2 h-2 rounded-full ${i < autoCompleteUses ? 'bg-purple-500' : 'bg-gray-300'}`} />
-                ))}
-              </div>
-            </div>
-
-            <canvas 
+            <canvas
               ref={canvasRef}
               className="w-full h-full rounded-xl"
               style={{ display: 'block' }}
