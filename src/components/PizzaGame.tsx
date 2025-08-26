@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { Button } from './ui/button';
@@ -68,11 +68,17 @@ function Sauce() {
 }
 
 function Cheese() {
-  const positions = Array.from({ length: 18 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 18 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.2; // Stay within pizza bounds
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2
+      };
+    }), []
+  );
 
   return (
     <>
@@ -87,17 +93,23 @@ function Cheese() {
 }
 
 function Pepperoni() {
-  const positions = Array.from({ length: 10 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 10 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.0; // Stay within pizza bounds
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2
+      };
+    }), []
+  );
 
   return (
     <>
       {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]}>
-          <cylinderGeometry args={[0.4, 0.4, 0.05, 16]} />
+        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[-Math.PI / 2, 0, pos.rotation]}>
+          <cylinderGeometry args={[0.4, 0.4, 0.03, 16]} />
           <meshPhongMaterial color="#B22222" />
         </mesh>
       ))}
@@ -106,11 +118,17 @@ function Pepperoni() {
 }
 
 function Mushrooms() {
-  const positions = Array.from({ length: 8 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 8 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.0;
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2
+      };
+    }), []
+  );
 
   return (
     <>
@@ -125,18 +143,25 @@ function Mushrooms() {
 }
 
 function Peppers() {
-  const positions = Array.from({ length: 10 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 10 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.0;
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2,
+        color: Math.random() > 0.5 ? "#228B22" : "#DC143C"
+      };
+    }), []
+  );
 
   return (
     <>
       {positions.map((pos, i) => (
         <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]}>
           <boxGeometry args={[0.8, 0.06, 0.2]} />
-          <meshPhongMaterial color={Math.random() > 0.5 ? "#228B22" : "#DC143C"} />
+          <meshPhongMaterial color={pos.color} />
         </mesh>
       ))}
     </>
@@ -144,17 +169,23 @@ function Peppers() {
 }
 
 function Olives() {
-  const positions = Array.from({ length: 8 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 8 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.0;
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2
+      };
+    }), []
+  );
 
   return (
     <>
       {positions.map((pos, i) => (
-        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]}>
-          <torusGeometry args={[0.25, 0.1, 8, 16]} />
+        <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[Math.PI / 2, 0, pos.rotation]}>
+          <torusGeometry args={[0.2, 0.08, 8, 16]} />
           <meshPhongMaterial color="#2F2F2F" />
         </mesh>
       ))}
@@ -163,18 +194,24 @@ function Olives() {
 }
 
 function Sausage() {
-  const positions = Array.from({ length: 14 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2,
-    scale: 0.2 + Math.random() * 0.2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 14 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.0;
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2,
+        scale: 0.15 + Math.random() * 0.15
+      };
+    }), []
+  );
 
   return (
     <>
       {positions.map((pos, i) => (
         <mesh key={i} position={[pos.x, 0.06, pos.z]} rotation={[0, pos.rotation, 0]} scale={pos.scale}>
-          <dodecahedronGeometry args={[0.4]} />
+          <sphereGeometry args={[0.3, 8, 8]} />
           <meshPhongMaterial color="#8B4513" />
         </mesh>
       ))}
@@ -183,11 +220,17 @@ function Sausage() {
 }
 
 function Onions() {
-  const positions = Array.from({ length: 8 }, () => ({
-    x: (Math.random() - 0.5) * 7,
-    z: (Math.random() - 0.5) * 7,
-    rotation: Math.random() * Math.PI * 2
-  })).filter(pos => Math.sqrt(pos.x * pos.x + pos.z * pos.z) < 3.5);
+  const positions = useMemo(() => 
+    Array.from({ length: 8 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 3.0;
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        rotation: Math.random() * Math.PI * 2
+      };
+    }), []
+  );
 
   return (
     <>
