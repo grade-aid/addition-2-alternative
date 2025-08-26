@@ -486,7 +486,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4">
             <canvas 
               ref={canvasRef}
-              className="w-full h-96 rounded-xl"
+              className="w-full h-full rounded-xl"
               style={{ display: 'block' }}
             />
           </div>
