@@ -691,11 +691,10 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                       onClick={() => toggleIngredient(ingredient.id)}
                       variant={isSelected ? "default" : "outline"}
                       className={`flex items-center justify-center gap-2 p-4 h-auto transition-all duration-200 ${
-                        isRequired ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
-                      } ${isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'}`}
+                        isSelected ? 'scale-105 shadow-lg' : 'hover:scale-102'
+                      }`}
                       style={{
-                        backgroundColor: isSelected ? ingredient.color : undefined,
-                        borderColor: isRequired ? '#fbbf24' : undefined
+                        backgroundColor: isSelected ? ingredient.color : undefined
                       }}
                     >
                       <span className="text-3xl">{ingredient.emoji}</span>
