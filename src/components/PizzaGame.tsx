@@ -353,7 +353,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [showOrderComplete, setShowOrderComplete] = useState(false);
   
   // Timer states
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(15);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [orderFailed, setOrderFailed] = useState(false);
   
@@ -363,6 +363,15 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   
   // Visual feedback states
   const [customerMood, setCustomerMood] = useState<'😊' | '😐' | '😠'>('😊');
+  
+  // Price multiplier system
+  const [priceMultiplier, setPriceMultiplier] = useState(1);
+
+  // Load price multiplier from localStorage on component mount
+  useEffect(() => {
+    const gameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+    setPriceMultiplier(gameCount + 1);
+  }, []);
 
   // Generate random orders for each day
   const [orders] = useState<PizzaOrder[]>(() => {
@@ -374,7 +383,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       return {
         id: i + 1,
         ingredients: selectedIngredients.map(ing => ing.id),
-        totalPrice: selectedIngredients.reduce((sum, ing) => sum + ing.price, 0) + 5 // Base pizza price $5
+        totalPrice: (selectedIngredients.reduce((sum, ing) => sum + ing.price, 0) + 5) // Base pizza price $5
       };
     });
   });
@@ -389,9 +398,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setTimeLeft(prev => {
           const newTime = prev - 1;
           
-          // Update customer mood based on time
-          if (newTime > 6) setCustomerMood('😊');
-          else if (newTime > 3) setCustomerMood('😐');
+          // Update customer mood based on time (adjusted for 15 seconds)
+          if (newTime > 10) setCustomerMood('😊');
+          else if (newTime > 5) setCustomerMood('😐');
           else setCustomerMood('😠');
           
           if (newTime <= 0) {
@@ -415,7 +424,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   // Start timer when new order appears
   useEffect(() => {
     if (currentOrder) {
-      setTimeLeft(10);
+      setTimeLeft(15);
       setIsTimerActive(true);
       setCustomerMood('😊');
     }
@@ -428,6 +437,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         setCurrentOrderIndex(5);
         setSelectedIngredients([]);
       } else {
+        // Save incremented game count to localStorage
+        const currentGameCount = parseInt(localStorage.getItem('pizzaGameCount') || '0', 10);
+        localStorage.setItem('pizzaGameCount', (currentGameCount + 1).toString());
         onComplete(day1Earnings, day2Earnings);
       }
     } else {
@@ -488,9 +500,10 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     if (orderMatches) {
       setIsTimerActive(false);
       
-      // Calculate bonus for time remaining
-      const timeBonus = Math.floor(timeLeft / 2);
-      const totalEarnings = currentOrder.totalPrice + timeBonus;
+      // Calculate bonus for time remaining and apply price multiplier
+      const timeBonus = Math.floor(timeLeft / 2) * priceMultiplier;
+      const basePrice = currentOrder.totalPrice * priceMultiplier;
+      const totalEarnings = basePrice + timeBonus;
       
       if (currentDay === 1) {
         setPizzasSoldDay1(prev => prev + 1);
@@ -534,6 +547,15 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             <div className="text-4xl">{customerMood}</div>
           </div>
           
+          {/* Price Multiplier Indicator */}
+          {priceMultiplier > 1 && (
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-full mb-4 animate-pulse">
+              <span className="text-2xl">🔥</span>
+              <span className="font-bold text-lg">{priceMultiplier}x PRICES!</span>
+              <span className="text-2xl">💰</span>
+            </div>
+          )}
+          
           <div className="flex justify-center gap-8">
             <div className="flex items-center gap-2">
               <span className="text-2xl">☀️</span>
@@ -561,8 +583,10 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-3xl text-center animate-scale-in">
               <div className="text-6xl mb-4">✅</div>
-              <div className="text-4xl font-bold text-green-600 mb-2">+${currentOrder?.totalPrice + Math.floor(timeLeft / 2)}</div>
-              <div className="text-lg text-gray-600">⚡ Speed Bonus: +${Math.floor(timeLeft / 2)}</div>
+              <div className="text-4xl font-bold text-green-600 mb-2">
+                +${(currentOrder?.totalPrice || 0) * priceMultiplier + Math.floor(timeLeft / 2) * priceMultiplier}
+              </div>
+              <div className="text-lg text-gray-600">⚡ Speed Bonus: +${Math.floor(timeLeft / 2) * priceMultiplier}</div>
             </div>
           </div>
         )}
@@ -599,7 +623,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                     stroke={timeLeft > 6 ? '#10b981' : timeLeft > 3 ? '#f59e0b' : '#ef4444'}
                     strokeWidth="8"
                     strokeLinecap="round"
-                    strokeDasharray={`${(timeLeft / 10) * 283} 283`}
+                    strokeDasharray={`${(timeLeft / 15) * 283} 283`}
                     className="transition-all duration-1000"
                   />
                 </svg>
@@ -668,7 +692,12 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                   })}
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold text-green-600">${currentOrder.totalPrice}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    ${currentOrder.totalPrice * priceMultiplier}
+                    {priceMultiplier > 1 && (
+                      <span className="text-sm text-orange-600 ml-1">({priceMultiplier}x)</span>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-600">+ Speed Bonus</div>
                 </div>
               </Card>
@@ -700,7 +729,10 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                       <span className="text-3xl">{ingredient.emoji}</span>
                       <div className="text-center">
                         <div className={`text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
-                          ${ingredient.price}
+                          ${ingredient.price * priceMultiplier}
+                          {priceMultiplier > 1 && (
+                            <span className="text-xs opacity-75 block">({priceMultiplier}x)</span>
+                          )}
                         </div>
                         {isSelected && <div className="text-white text-lg">✓</div>}
                       </div>
