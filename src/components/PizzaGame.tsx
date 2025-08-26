@@ -473,6 +473,14 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   useEffect(() => {
     if (canvasRef.current && !sceneRef.current) {
       sceneRef.current = new PizzaScene(canvasRef.current);
+      
+      // Trigger initial resize to ensure proper canvas sizing
+      setTimeout(() => {
+        if (canvasRef.current && sceneRef.current) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          sceneRef.current.handleResize(rect.width, rect.height);
+        }
+      }, 100);
     }
     
     return () => {
@@ -698,7 +706,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 3D Pizza Viewer with Timer */}
-          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl relative overflow-hidden aspect-square h-96">
+          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl relative overflow-hidden h-[400px] flex items-center justify-center">
             {/* Timer Ring */}
             <div className="absolute top-4 left-4 z-10">
               <div className="relative w-20 h-20">
@@ -733,8 +741,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
 
             <canvas
               ref={canvasRef}
-              className="w-full h-full rounded-xl"
-              style={{ display: 'block' }}
+              className="w-full h-full rounded-xl block"
             />
           </div>
 
