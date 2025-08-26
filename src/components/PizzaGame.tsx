@@ -498,11 +498,20 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     }
   };
 
-
   // Initialize Three.js scene
   useEffect(() => {
     if (canvasRef.current && !sceneRef.current) {
-      sceneRef.current = new PizzaScene(canvasRef.current);
+      // Wait for next frame to ensure proper sizing
+      setTimeout(() => {
+        if (canvasRef.current) {
+          sceneRef.current = new PizzaScene(canvasRef.current);
+          // Initial sizing
+          const rect = canvasRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            sceneRef.current.handleResize(rect.width, rect.height);
+          }
+        }
+      }, 0);
     }
     
     return () => {
@@ -525,12 +534,25 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
     const handleResize = () => {
       if (canvasRef.current && sceneRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
-        sceneRef.current.handleResize(rect.width, rect.height);
+        if (rect.width > 0 && rect.height > 0) {
+          sceneRef.current.handleResize(rect.width, rect.height);
+        }
       }
     };
     
+    // Use ResizeObserver for better container resize detection
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (canvasRef.current) {
+      resizeObserver.observe(canvasRef.current);
+    }
+    
+    // Also listen to window resize as fallback
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const toggleIngredient = (ingredientId: string) => {
@@ -587,7 +609,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const startGame = () => {
     setGameStarted(true);
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -676,10 +697,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
           </div>
         )}
 
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 3D Pizza Viewer with Timer */}
-          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4 relative">
+          <div className="bg-gradient-to-b from-blue-100 to-blue-200 rounded-3xl p-4 relative h-96 lg:h-[500px]">
             {/* Timer Ring */}
             <div className="absolute top-8 left-8 z-10">
               <div className="relative w-20 h-20">
@@ -715,7 +735,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             <canvas
               ref={canvasRef}
               className="w-full h-full rounded-xl"
-              style={{ display: 'block' }}
+              style={{ display: 'block', minHeight: '300px' }}
             />
           </div>
 
