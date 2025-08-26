@@ -267,7 +267,15 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               {/* Answer Row */}
               <div className="flex justify-center">
                 <div className="flex gap-2">
-                  {Array.from({ length: maxLength + 1 }, (_, i) => (
+                  {/* Final carry position (leftmost) */}
+                  <div 
+                    className="digit-box"
+                    style={{ visibility: answer[maxLength] ? 'visible' : 'hidden' }}
+                  >
+                    {answer[maxLength] || ''}
+                  </div>
+                  {/* Main answer positions aligned with numbers */}
+                  {Array.from({ length: maxLength }, (_, i) => (
                     <div 
                       key={`answer-${i}`}
                       className={`digit-box cursor-pointer hover:shadow-lg transition-all duration-200 ${
