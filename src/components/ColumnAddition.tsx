@@ -85,6 +85,32 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     };
   }, []);
 
+  // Generate a question with no carrying required (for first example)
+  const generateNoCarryQuestion = useCallback((): Question => {
+    // Create 3-digit numbers where each column sum is < 10
+    let topDigits: number[] = [];
+    let bottomDigits: number[] = [];
+    
+    // Generate 3 digits for top number (ensuring first digit is not 0)
+    topDigits[0] = Math.floor(Math.random() * 4) + 1; // 1-4
+    topDigits[1] = Math.floor(Math.random() * 5); // 0-4
+    topDigits[2] = Math.floor(Math.random() * 5); // 0-4
+    
+    // Generate bottom number digits ensuring no carry
+    bottomDigits[0] = Math.floor(Math.random() * (9 - topDigits[0])) + 1; // Ensure sum < 10
+    bottomDigits[1] = Math.floor(Math.random() * (10 - topDigits[1])); // Ensure sum < 10
+    bottomDigits[2] = Math.floor(Math.random() * (10 - topDigits[2])); // Ensure sum < 10
+    
+    const topNum = topDigits.join('');
+    const bottomNum = bottomDigits.join('');
+    
+    return {
+      topNumber: topNum,
+      bottomNumber: bottomNum,
+      difficulty: 'easy'
+    };
+  }, []);
+
   // Solve a question and return the correct answer and carries
   const solveQuestion = useCallback((question: Question): SolvedExample => {
     const maxLength = Math.max(question.topNumber.length, question.bottomNumber.length);
@@ -152,7 +178,13 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   // Initialize examples and practice questions
   useEffect(() => {
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-    const exampleQuestions = difficulties.map(diff => generateQuestion(diff));
+    const exampleQuestions = difficulties.map((diff, index) => {
+      if (index === 0) {
+        // First example: ensure no carrying by using numbers that don't require it
+        return generateNoCarryQuestion();
+      }
+      return generateQuestion(diff);
+    });
     const solvedExamples = exampleQuestions.map(q => solveQuestion(q));
     
     setExamples(solvedExamples);
@@ -174,7 +206,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
         carries: new Array(maxLength + 1).fill('')
       });
     }
-  }, [generateQuestion, solveQuestion]);
+  }, [generateQuestion, generateNoCarryQuestion, solveQuestion]);
 
   const nextExample = () => {
     if (exampleIndex < examples.length - 1) {
