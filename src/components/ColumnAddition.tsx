@@ -286,12 +286,50 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     }
   };
 
+  const handleEarningsCalculation = () => {
+    const total = day1Earnings + day2Earnings;
+    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length);
+    
+    // Initialize user inputs for earnings calculation
+    setUserInputs({
+      answer: new Array(maxLength + 1).fill(''),
+      carries: new Array(maxLength + 1).fill('')
+    });
+    setIsCorrect(null);
+  };
+
+  const checkEarningsAnswer = () => {
+    const total = day1Earnings + day2Earnings;
+    const totalStr = total.toString();
+    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1;
+    
+    // Create the correct answer array (right-aligned)
+    const correctAnswer = new Array(maxLength).fill('');
+    const paddedTotal = totalStr.padStart(maxLength, '');
+    for (let i = 0; i < maxLength; i++) {
+      if (paddedTotal[i].trim()) {
+        correctAnswer[i] = paddedTotal[i];
+      }
+    }
+    
+    // Compare user answer with correct answer
+    const answerCorrect = userInputs.answer.every((val, i) => val === correctAnswer[i]);
+    setIsCorrect(answerCorrect);
+  };
+
   const handlePizzaGameComplete = (day1: number, day2: number) => {
     setDay1Earnings(day1);
     setDay2Earnings(day2);
     setPhase('earnings-calculation');
     setShowEarningsCalculation(true);
   };
+
+  // Initialize earnings calculation when entering that phase
+  useEffect(() => {
+    if (phase === 'earnings-calculation' && showEarningsCalculation) {
+      handleEarningsCalculation();
+    }
+  }, [phase, showEarningsCalculation, day1Earnings, day2Earnings]);
 
   const handlePizzaGameClose = () => {
     setPhase('practice');
@@ -373,43 +411,106 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               <h3 className="text-2xl font-bold mb-6">Calculate Total Earnings:</h3>
               
               <div className="flex flex-col items-center space-y-6">
-                {/* Show the calculation using column addition method */}
-                <div className="flex justify-center">
-                  <div className="flex gap-4 text-3xl font-mono">
-                    <div className="text-right" style={{ width: '100px' }}>
-                      ${day1Earnings}
+                {/* Interactive Column Addition */}
+                <div className="bg-gray-50 p-8 rounded-2xl">
+                  <div className="flex flex-col items-center space-y-4">
+                    {/* Carry row */}
+                    <div className="flex gap-2">
+                      {Array.from({ length: Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1 }, (_, i) => (
+                        <div key={i} className="w-12 h-8 flex items-center justify-center">
+                          <Input
+                            type="text"
+                            maxLength={1}
+                            className="w-8 h-8 text-center text-sm border-none bg-transparent text-red-600 font-bold p-0"
+                            placeholder=""
+                            value={userInputs.carries[i] || ''}
+                            onChange={(e) => handleInputChange('carries', i, e.target.value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* First number (Day 1) */}
+                    <div className="flex gap-2 items-center">
+                      <span className="text-2xl font-mono mr-2">$</span>
+                      {day1Earnings.toString().padStart(Math.max(day1Earnings.toString().length, day2Earnings.toString().length), ' ').split('').map((digit, i) => (
+                        <div key={i} className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold border-b-2 border-gray-300">
+                          {digit.trim() && digit}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Second number (Day 2) with plus sign */}
+                    <div className="flex gap-2 items-center">
+                      <span className="text-2xl font-mono mr-2">+$</span>
+                      {day2Earnings.toString().padStart(Math.max(day1Earnings.toString().length, day2Earnings.toString().length), ' ').split('').map((digit, i) => (
+                        <div key={i} className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold border-b-2 border-gray-300">
+                          {digit.trim() && digit}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Line separator */}
+                    <div className="w-full h-1 bg-brand-black/20 rounded-full"></div>
+                    
+                    {/* Answer row */}
+                    <div className="flex gap-2 items-center">
+                      <span className="text-2xl font-mono mr-2">$</span>
+                      {Array.from({ length: Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1 }, (_, i) => (
+                        <div key={i} className="w-12 h-12 flex items-center justify-center border-2 border-primary/30 rounded-lg bg-white">
+                          <Input
+                            type="text"
+                            maxLength={1}
+                            className="w-full h-full text-center text-2xl font-mono font-bold border-none bg-transparent p-0"
+                            placeholder=""
+                            value={userInputs.answer[i] || ''}
+                            onChange={(e) => handleInputChange('answer', i, e.target.value)}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex justify-center">
-                  <div className="flex gap-4 text-3xl font-mono">
-                    <div className="text-2xl font-bold">+</div>
-                    <div className="text-right" style={{ width: '100px' }}>
-                      ${day2Earnings}
-                    </div>
-                  </div>
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <Button onClick={checkEarningsAnswer} className="grade-button primary">
+                    Check Answer
+                  </Button>
+                  <Button onClick={() => {
+                    const total = day1Earnings + day2Earnings;
+                    const totalStr = total.toString();
+                    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1;
+                    const paddedAnswer = totalStr.padStart(maxLength, '').split('');
+                    setUserInputs(prev => ({ ...prev, answer: paddedAnswer }));
+                  }} className="grade-button accent">
+                    Show Answer
+                  </Button>
                 </div>
                 
-                <div className="w-full max-w-sm h-1 bg-brand-black/20 rounded-full"></div>
-                
-                <div className="flex justify-center">
-                  <div className="flex gap-4 text-4xl font-mono font-bold text-green-600">
-                    <div className="text-right" style={{ width: '100px' }}>
-                      ${day1Earnings + day2Earnings}
-                    </div>
+                {/* Feedback */}
+                {isCorrect !== null && (
+                  <div className={`p-6 rounded-2xl ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
+                    {isCorrect ? (
+                      <>
+                        <h4 className="text-xl font-bold text-green-700 mb-2">Perfect! 🎉</h4>
+                        <p className="text-lg text-green-600">
+                          You correctly calculated your total earnings: <strong>${day1Earnings + day2Earnings}</strong>
+                        </p>
+                        <p className="text-sm text-green-600 mt-2">
+                          This is exactly how we use column addition in real life - to add up earnings, expenses, and more!
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h4 className="text-xl font-bold text-red-700 mb-2">Not quite right</h4>
+                        <p className="text-lg text-red-600">
+                          Check your work and try again. Remember to work from right to left and carry when needed!
+                        </p>
+                      </>
+                    )}
                   </div>
-                </div>
-              </div>
-              
-              <div className="mt-8 p-6 bg-green-100 rounded-2xl">
-                <h4 className="text-xl font-bold text-green-700 mb-2">Congratulations! 🎉</h4>
-                <p className="text-lg text-green-600">
-                  You earned a total of <strong>${day1Earnings + day2Earnings}</strong> from your pizza restaurant!
-                </p>
-                <p className="text-sm text-green-600 mt-2">
-                  This is exactly how we use column addition in real life - to add up earnings, expenses, and more!
-                </p>
+                )}
               </div>
             </div>
 
