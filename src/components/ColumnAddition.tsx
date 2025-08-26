@@ -151,7 +151,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
 
   // Initialize examples and practice questions
   useEffect(() => {
-    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'easy', 'medium', 'medium', 'hard'];
+    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     const exampleQuestions = difficulties.map(diff => generateQuestion(diff));
     const solvedExamples = exampleQuestions.map(q => solveQuestion(q));
     
@@ -365,13 +365,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     });
   };
 
-  const completeAllSteps = () => {
-    const currentExample = examples[exampleIndex];
-    if (!currentExample) return;
-    
-    setCurrentStep(currentExample.steps.length - 1);
-    setIsAutoPlaying(false);
-  };
 
   // Get current question based on phase
   const currentQuestion = phase === 'examples' ? examples[exampleIndex] : practiceQuestions[practiceIndex];
@@ -543,7 +536,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <>
                   <span className="px-4 py-2 bg-accent/10 rounded-full font-medium flex items-center gap-2">
                     <Eye className="w-5 h-5" />
-                    Example {exampleIndex + 1}/5
+                    Example {exampleIndex + 1}/3
                   </span>
                 </>
               ) : (
@@ -583,13 +576,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                     >
                       <Play className="w-5 h-5 mr-2" />
                       {currentStep === -1 ? 'Play Example' : 'Playing...'}
-                    </Button>
-                    <Button 
-                      onClick={completeAllSteps} 
-                      className="grade-button accent animate-fade-in"
-                    >
-                      <SkipForward className="w-5 h-5 mr-2" />
-                      Complete All Steps
                     </Button>
                   </>
                 ) : (
@@ -846,7 +832,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
           <div className="flex justify-center">
             <div className="flex gap-2">
               {phase === 'examples' ? (
-                Array.from({ length: 5 }, (_, i) => (
+                Array.from({ length: 3 }, (_, i) => (
                   <div 
                     key={`progress-${i}`}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
