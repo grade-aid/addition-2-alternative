@@ -866,6 +866,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
               </>
             )}
 
+            <Button onClick={onClose} variant="outline" className="w-full mt-4 text-gray-600 hover:text-gray-800">
+              ⏭️ Skip Game
+            </Button>
           </div>
         </div>
       </Card>
