@@ -602,13 +602,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                       <Play className="w-5 h-5 mr-2" />
                       {currentStep === -1 ? 'Play Example' : 'Playing...'}
                     </Button>
-                    <Button 
-                      onClick={completeExample} 
-                      className="grade-button accent"
-                    >
-                      <Zap className="w-5 h-5 mr-2" />
-                      Complete Example
-                    </Button>
                   </>
                 ) : (
                   <>
