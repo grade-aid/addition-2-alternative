@@ -622,10 +622,6 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <Button onClick={checkAnswer} className="grade-button">
                   Check Answer
                 </Button>
-                <Button onClick={completePractice} className="grade-button accent">
-                  <Zap className="w-5 h-5 mr-2" />
-                  Complete Answer
-                </Button>
               </>
             )}
           </div>
