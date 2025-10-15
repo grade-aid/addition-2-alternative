@@ -52,8 +52,8 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   
   // Pizza game tracking
   const [correctAnswerCount, setCorrectAnswerCount] = useState(0);
-  const [day1Earnings, setDay1Earnings] = useState(0);
-  const [day2Earnings, setDay2Earnings] = useState(0);
+  const [currentCycle, setCurrentCycle] = useState(1);
+  const [currentRoundEarnings, setCurrentRoundEarnings] = useState(0);
   const [showEarningsCalculation, setShowEarningsCalculation] = useState(false);
 
   // Question generation based on difficulty
@@ -189,12 +189,15 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     
     setExamples(solvedExamples);
     
-    // Generate 10 practice questions
-    const practice = Array.from({ length: 10 }, (_, i) => {
-      const diffIndex = Math.floor(i / 3.3); // Distribute difficulties
-      const difficulty = ['easy', 'medium', 'hard'][Math.min(diffIndex, 2)] as 'easy' | 'medium' | 'hard';
-      return generateQuestion(difficulty);
-    });
+    // Generate 6 practice questions: 2x3-digit, 2x4-digit, 2x5-digit
+    const practice = [
+      generateQuestion('easy'),    // Q1 - Cycle 1
+      generateQuestion('easy'),    // Q2 - Cycle 1
+      generateQuestion('medium'),  // Q3 - Cycle 2
+      generateQuestion('medium'),  // Q4 - Cycle 2
+      generateQuestion('hard'),    // Q5 - Cycle 3
+      generateQuestion('hard'),    // Q6 - Cycle 3
+    ];
     
     setPracticeQuestions(practice);
     
@@ -313,17 +316,14 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
         const newCount = prev + 1;
         // Trigger pizza game every 2 correct answers
         if (newCount % 2 === 0 && newCount > 0) {
+          // Update current cycle before pizza game
+          setCurrentCycle(Math.floor(newCount / 2));
           setTimeout(() => setPhase('pizza-game'), 1500);
         }
         return newCount;
       });
       
-      // Auto advance to next question after a short delay
-      setTimeout(() => {
-        if (practiceIndex < practiceQuestions.length - 1) {
-          nextPractice();
-        }
-      }, 1500);
+      // Don't auto-advance - pizza game will handle flow after every 2 correct answers
     }
   };
 
@@ -344,58 +344,30 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     }
   };
 
-  const handleEarningsCalculation = () => {
-    const total = day1Earnings + day2Earnings;
-    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length);
-    
-    // Initialize user inputs for earnings calculation
-    setUserInputs({
-      answer: new Array(maxLength + 1).fill(''),
-      carries: new Array(maxLength + 1).fill('')
-    });
-    setIsCorrect(null);
-  };
-
-  const checkEarningsAnswer = () => {
-    const total = day1Earnings + day2Earnings;
-    const totalStr = total.toString();
-    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1;
-    
-    // Create the correct answer array (right-aligned)
-    const correctAnswer = new Array(maxLength).fill('');
-    const paddedTotal = totalStr.padStart(maxLength, ' ');
-    for (let i = 0; i < maxLength; i++) {
-      if (paddedTotal[i] && paddedTotal[i].trim()) {
-        correctAnswer[i] = paddedTotal[i];
-      }
-    }
-    
-    // Compare user answer with correct answer
-    const answerCorrect = userInputs.answer.every((val, i) => val === correctAnswer[i]);
-    setIsCorrect(answerCorrect);
-  };
-
-  const handlePizzaGameComplete = (day1: number, day2: number) => {
-    setDay1Earnings(day1);
-    setDay2Earnings(day2);
+  const handlePizzaGameComplete = (earnings: number) => {
+    setCurrentRoundEarnings(earnings);
     setPhase('earnings-calculation');
     setShowEarningsCalculation(true);
   };
 
-  // Initialize earnings calculation when entering that phase
-  useEffect(() => {
-    if (phase === 'earnings-calculation' && showEarningsCalculation) {
-      handleEarningsCalculation();
-    }
-  }, [phase, showEarningsCalculation, day1Earnings, day2Earnings]);
 
   const handlePizzaGameClose = () => {
     setPhase('practice');
   };
 
   const continuePractice = () => {
-    setPhase('practice');
     setShowEarningsCalculation(false);
+    
+    // Check if we've completed all cycles (6 questions total)
+    if (practiceIndex >= practiceQuestions.length - 1) {
+      // All cycles complete
+      alert('🎉 Congratulations! You completed all 3 cycles!');
+      // Could add a completion screen here
+    } else {
+      // Continue to next question
+      setPhase('practice');
+      nextPractice();
+    }
   };
 
 
@@ -415,118 +387,21 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
         <Card className="w-full max-w-4xl p-8">
           <div className="text-center space-y-8">
             <h1 className="font-display text-4xl font-bold text-brand-black mb-2">
-              🎉 Restaurant Earnings Calculator
+              🎉 Pizza Round {currentCycle} Complete!
             </h1>
             <p className="text-xl text-muted-foreground">
-              Let's use column addition to calculate your total earnings!
+              Great job! You earned <strong>${currentRoundEarnings}</strong> in this round.
             </p>
 
             {/* Earnings Display */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-8">
-              <Card className="p-6 bg-blue-50 border-blue-200">
-                <h3 className="text-2xl font-bold text-blue-700 mb-4">Day 1 Earnings</h3>
-                <p className="text-4xl font-bold text-blue-800">${day1Earnings}</p>
-              </Card>
-              <Card className="p-6 bg-green-50 border-green-200">
-                <h3 className="text-2xl font-bold text-green-700 mb-4">Day 2 Earnings</h3>
-                <p className="text-4xl font-bold text-green-800">${day2Earnings}</p>
+            <div className="my-8">
+              <Card className="p-8 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <h3 className="text-3xl font-bold text-green-700 mb-4">Round {currentCycle} Earnings</h3>
+                <p className="text-6xl font-bold text-green-800">${currentRoundEarnings}</p>
               </Card>
             </div>
-
-            {/* Column Addition Calculation */}
-            <div className="bg-white rounded-3xl p-8 border-4 border-brand-black/10">
-              <h3 className="text-2xl font-bold mb-6">Calculate Total Earnings:</h3>
-              
-              <div className="flex flex-col items-center space-y-6">
-                {/* Interactive Column Addition */}
-                <div className="bg-gray-50 p-8 rounded-2xl">
-                  <div className="flex flex-col items-center space-y-4">
-                    {/* Carry row */}
-                    <div className="flex gap-2 items-center">
-                      <span className="text-2xl font-mono mr-2 invisible">$</span>
-                      {Array.from({ length: Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1 }, (_, i) => (
-                        <div key={i} className="w-12 h-12 flex items-center justify-center">
-                          <Input
-                            type="text"
-                            maxLength={1}
-                            className="w-10 h-10 text-center text-sm bg-red-50 border border-red-200 text-red-700 font-bold p-0 rounded"
-                            placeholder=""
-                            value={userInputs.carries[i] || ''}
-                            onChange={(e) => handleInputChange('carries', i, e.target.value)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* First number (Day 1) */}
-                    <div className="flex gap-2 items-center">
-                      <span className="text-2xl font-mono mr-2">$</span>
-                      {day1Earnings.toString().padStart(Math.max(day1Earnings.toString().length, day2Earnings.toString().length), ' ').split('').map((digit, i) => (
-                        <div key={i} className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold border-b-2 border-gray-300">
-                          {digit.trim() && digit}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Second number (Day 2) with plus sign */}
-                    <div className="flex gap-2 items-center">
-                      <span className="text-2xl font-mono mr-2">+$</span>
-                      {day2Earnings.toString().padStart(Math.max(day1Earnings.toString().length, day2Earnings.toString().length), ' ').split('').map((digit, i) => (
-                        <div key={i} className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold border-b-2 border-gray-300">
-                          {digit.trim() && digit}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Line separator */}
-                    <div className="w-full h-1 bg-brand-black/20 rounded-full"></div>
-                    
-                    {/* Answer row */}
-                    <div className="flex gap-2 items-center">
-                      <span className="text-2xl font-mono mr-2">$</span>
-                      {Array.from({ length: Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1 }, (_, i) => (
-                        <div key={i} className="w-12 h-12 flex items-center justify-center border-2 border-primary/30 rounded-lg bg-white">
-                          <Input
-                            type="text"
-                            maxLength={1}
-                            className="w-full h-full text-center text-2xl font-mono font-bold border-none bg-transparent p-0"
-                            placeholder=""
-                            value={userInputs.answer[i] || ''}
-                            onChange={(e) => handleInputChange('answer', i, e.target.value)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <Button onClick={checkEarningsAnswer} className="grade-button primary">
-                    Check Answer
-                  </Button>
-                </div>
-                
-                {/* Feedback */}
-                {isCorrect !== null && (
-                  <div className={`p-6 rounded-2xl ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
-                    {isCorrect ? (
-                      <h4 className="text-xl font-bold text-green-700">Perfect</h4>
-                    ) : (
-                      <>
-                        <h4 className="text-xl font-bold text-red-700 mb-2">Not quite right</h4>
-                        <p className="text-lg text-red-600">
-                          Check your work and try again. Remember to work from right to left and carry when needed!
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
             <Button onClick={continuePractice} className="grade-button accent text-lg px-8 py-4">
-              Continue Practice <ArrowRight className="w-5 h-5 ml-2" />
+              {practiceIndex >= practiceQuestions.length - 1 ? 'Finish' : 'Continue to Next Round'} <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
         </Card>
@@ -561,7 +436,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <>
                   <span className="px-4 py-2 bg-primary/10 rounded-full font-medium flex items-center gap-2">
                     <PenTool className="w-5 h-5" />
-                    Question {practiceIndex + 1}/10
+                    Cycle {Math.floor(practiceIndex / 2) + 1}/3 - Question {(practiceIndex % 2) + 1}/2
                   </span>
                 </>
               )}
@@ -846,7 +721,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   />
                 ))
               ) : (
-                Array.from({ length: 10 }, (_, i) => (
+                Array.from({ length: 6 }, (_, i) => (
                   <div 
                     key={`progress-${i}`}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${

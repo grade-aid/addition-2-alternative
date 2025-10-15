@@ -335,7 +335,7 @@ class PizzaScene {
 }
 
 interface PizzaGameProps {
-  onComplete: (day1Earnings: number, day2Earnings: number) => void;
+  onComplete: (earnings: number) => void;
   onClose: () => void;
 }
 
@@ -346,20 +346,15 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   // Game start state
   const [gameStarted, setGameStarted] = useState(false);
   
-  const [currentDay, setCurrentDay] = useState(1);
-  const [pizzasSoldDay1, setPizzasSoldDay1] = useState(0);
-  const [pizzasSoldDay2, setPizzasSoldDay2] = useState(0);
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
-  const [day1Earnings, setDay1Earnings] = useState(0);
-  const [day2Earnings, setDay2Earnings] = useState(0);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [pizzasSold, setPizzasSold] = useState(0);
   const [showOrderComplete, setShowOrderComplete] = useState(false);
   
   // Order attempt tracking
-  const [day1Attempts, setDay1Attempts] = useState(0);
-  const [day2Attempts, setDay2Attempts] = useState(0);
-  const [day1Failed, setDay1Failed] = useState(0);
-  const [day2Failed, setDay2Failed] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [failed, setFailed] = useState(0);
   
   // Timer states
   const [timeLeft, setTimeLeft] = useState(20);
@@ -389,12 +384,9 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   });
 
   const currentOrder = orders[currentOrderIndex];
-  const totalPizzasToday = currentDay === 1 ? pizzasSoldDay1 : pizzasSoldDay2;
-  const totalAttemptsToday = currentDay === 1 ? day1Attempts : day2Attempts;
 
-  // Timer effect - Fixed dependencies to include currentDay
+  // Timer effect
   useEffect(() => {
-    console.log('Timer effect triggered:', { isTimerActive, timeLeft, currentDay });
     if (isTimerActive && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
@@ -412,16 +404,11 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             setTimeout(() => {
               setOrderFailed(false);
               // Track failed order
-              if (currentDay === 1) {
-                setDay1Failed(prev => prev + 1);
-                setDay1Attempts(prev => prev + 1);
-              } else {
-                setDay2Failed(prev => prev + 1);
-                setDay2Attempts(prev => prev + 1);
-              }
+              setFailed(prev => prev + 1);
+              setAttempts(prev => prev + 1);
               nextOrder();
             }, 2000);
-            return 0; // Ensure we return 0 to stop the timer
+            return 0;
           }
           
           return newTime;
@@ -430,70 +417,47 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       
       return () => clearInterval(timer);
     }
-  }, [isTimerActive, currentDay]); // Added currentDay to dependencies
+  }, [isTimerActive]);
 
-  // Start timer when new order appears - Enhanced with debug logging
+  // Start timer when new order appears
   useEffect(() => {
-    console.log('Order change effect:', { currentOrder: currentOrder?.id, gameStarted, currentDay, currentOrderIndex, totalOrders: orders.length });
     if (currentOrder && gameStarted) {
-      console.log('Starting timer for Day', currentDay, 'Order', currentOrder.id);
       setTimeLeft(20);
       setIsTimerActive(true);
       setCustomerMood('😊');
-    } else if (!currentOrder && gameStarted && currentDay === 2) {
-      // Fallback: if we're on Day 2 and don't have a current order, complete the game
-      console.log('No current order on Day 2, completing game (fallback)');
-      // Cycle price multiplier for next game session
+    } else if (!currentOrder && gameStarted) {
+      // Game complete
       const nextCount = sessionGameCount + 1;
       const multipliers = [1, 4, 8];
       setPriceMultiplier(multipliers[nextCount % 3]);
       setSessionGameCount(nextCount);
-      console.log('Calling onComplete with earnings (order fallback):', { day1Earnings, day2Earnings });
-      onComplete(day1Earnings, day2Earnings);
+      onComplete(totalEarnings);
     }
-  }, [currentOrderIndex, gameStarted, currentDay, currentOrder, orders.length, day1Earnings, day2Earnings, onComplete]);
+  }, [currentOrderIndex, gameStarted, currentOrder, orders.length, totalEarnings, onComplete, sessionGameCount]);
 
   const nextOrder = () => {
-    console.log('nextOrder called:', { currentDay, totalAttemptsToday, day1Attempts, day2Attempts, currentOrderIndex });
-    
-    // Check if day is complete (3 total attempts)
-    if (totalAttemptsToday >= 3) {
-      if (currentDay === 1) {
-        console.log('Day 1 complete, transitioning to Day 2');
-        setCurrentDay(2);
-        setCurrentOrderIndex(3);
-        setSelectedIngredients([]);
-        // Explicit timer reset for Day 2
-        setTimeLeft(20);
-        setIsTimerActive(false); // Will be reactivated by the order change effect
-      } else {
-        // Game completed - immediately call onComplete
-        console.log('Day 2 complete, finishing game');
-        // Cycle price multiplier for next game session
-        const nextCount = sessionGameCount + 1;
-        const multipliers = [1, 4, 8];
-        setPriceMultiplier(multipliers[nextCount % 3]);
-        setSessionGameCount(nextCount);
-        console.log('Calling onComplete with earnings:', { day1Earnings, day2Earnings });
-        onComplete(day1Earnings, day2Earnings);
-        return; // Exit early to prevent further execution
-      }
+    // Check if round is complete (3 total attempts)
+    if (attempts >= 3) {
+      // Game completed
+      const nextCount = sessionGameCount + 1;
+      const multipliers = [1, 4, 8];
+      setPriceMultiplier(multipliers[nextCount % 3]);
+      setSessionGameCount(nextCount);
+      onComplete(totalEarnings);
+      return;
     } else {
       // Check bounds to prevent going beyond available orders
       const nextIndex = currentOrderIndex + 1;
       if (nextIndex >= orders.length) {
-        console.log('No more orders available, completing game');
-        // Cycle price multiplier for next game session
+        // No more orders, complete game
         const nextCount = sessionGameCount + 1;
         const multipliers = [1, 4, 8];
         setPriceMultiplier(multipliers[nextCount % 3]);
         setSessionGameCount(nextCount);
-        console.log('Calling onComplete with earnings (fallback):', { day1Earnings, day2Earnings });
-        onComplete(day1Earnings, day2Earnings);
+        onComplete(totalEarnings);
         return;
       }
       
-      console.log('Moving to next order:', nextIndex);
       setCurrentOrderIndex(nextIndex);
       setSelectedIngredients([]);
     }
@@ -577,17 +541,11 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       // Calculate bonus for time remaining and apply price multiplier
       const timeBonus = Math.floor(timeLeft / 2) * priceMultiplier;
       const basePrice = currentOrder.totalPrice * priceMultiplier;
-      const totalEarnings = basePrice + timeBonus;
+      const orderEarnings = basePrice + timeBonus;
       
-      if (currentDay === 1) {
-        setPizzasSoldDay1(prev => prev + 1);
-        setDay1Earnings(prev => prev + totalEarnings);
-        setDay1Attempts(prev => prev + 1);
-      } else {
-        setPizzasSoldDay2(prev => prev + 1);  
-        setDay2Earnings(prev => prev + totalEarnings);
-        setDay2Attempts(prev => prev + 1);
-      }
+      setPizzasSold(prev => prev + 1);
+      setTotalEarnings(prev => prev + orderEarnings);
+      setAttempts(prev => prev + 1);
 
       setShowOrderComplete(true);
       setTimeout(() => {
@@ -616,9 +574,8 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       <Card className="w-full max-w-6xl p-8">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="text-4xl">{currentDay === 1 ? '☀️' : '🌙'}</div>
             <h1 className="font-display text-4xl font-bold text-brand-black">
-              🍕 Day {currentDay}
+              🍕 Pizza Game
             </h1>
             <div className="text-4xl">{customerMood}</div>
           </div>
@@ -632,48 +589,24 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             </div>
           )}
           
-          <div className="flex justify-center gap-8">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">☀️</span>
-              <div className="flex gap-1">
-                {Array.from({length: 3}, (_, i) => {
-                  let color = 'bg-gray-300'; // Pending
-                  if (i < pizzasSoldDay1) {
-                    color = 'bg-green-500'; // Success
-                  } else if (i < day1Attempts) {
-                    color = 'bg-red-500'; // Failed
-                  }
-                  return (
-                    <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
-                  );
-                })}
-              </div>
-              <span className="text-lg font-bold">${day1Earnings}</span>
-              {day1Failed > 0 && (
-                <span className="text-sm text-red-600">(-{day1Failed})</span>
-              )}
+          <div className="flex justify-center items-center gap-4">
+            <div className="flex gap-1">
+              {Array.from({length: 3}, (_, i) => {
+                let color = 'bg-gray-300'; // Pending
+                if (i < pizzasSold) {
+                  color = 'bg-green-500'; // Success
+                } else if (i < attempts) {
+                  color = 'bg-red-500'; // Failed
+                }
+                return (
+                  <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
+                );
+              })}
             </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🌙</span>
-              <div className="flex gap-1">
-                {Array.from({length: 3}, (_, i) => {
-                  let color = 'bg-gray-300'; // Pending
-                  if (i < pizzasSoldDay2) {
-                    color = 'bg-green-500'; // Success
-                  } else if (i < day2Attempts) {
-                    color = 'bg-red-500'; // Failed
-                  }
-                  return (
-                    <div key={i} className={`w-3 h-3 rounded-full ${color}`} />
-                  );
-                })}
-              </div>
-              <span className="text-lg font-bold">${day2Earnings}</span>
-              {day2Failed > 0 && (
-                <span className="text-sm text-red-600">(-{day2Failed})</span>
-              )}
-            </div>
+            <span className="text-lg font-bold">${totalEarnings}</span>
+            {failed > 0 && (
+              <span className="text-sm text-red-600">(-{failed})</span>
+            )}
           </div>
         </div>
 
