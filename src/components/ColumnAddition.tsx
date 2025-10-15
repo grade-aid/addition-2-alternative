@@ -442,13 +442,14 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <div className="bg-gray-50 p-8 rounded-2xl">
                   <div className="flex flex-col items-center space-y-4">
                     {/* Carry row */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                      <span className="text-2xl font-mono mr-2 invisible">$</span>
                       {Array.from({ length: Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1 }, (_, i) => (
-                        <div key={i} className="w-12 h-8 flex items-center justify-center">
+                        <div key={i} className="w-12 h-12 flex items-center justify-center">
                           <Input
                             type="text"
                             maxLength={1}
-                            className="w-8 h-8 text-center text-sm bg-red-50 border border-red-200 text-red-700 font-bold p-0"
+                            className="w-10 h-10 text-center text-sm bg-red-50 border border-red-200 text-red-700 font-bold p-0 rounded"
                             placeholder=""
                             value={userInputs.carries[i] || ''}
                             onChange={(e) => handleInputChange('carries', i, e.target.value)}
