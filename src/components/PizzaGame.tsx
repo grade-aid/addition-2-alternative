@@ -456,12 +456,12 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const nextOrder = () => {
     console.log('nextOrder called:', { currentDay, totalAttemptsToday, day1Attempts, day2Attempts, currentOrderIndex });
     
-    // Check if day is complete (5 total attempts)
-    if (totalAttemptsToday >= 5) {
+    // Check if day is complete (3 total attempts)
+    if (totalAttemptsToday >= 3) {
       if (currentDay === 1) {
         console.log('Day 1 complete, transitioning to Day 2');
         setCurrentDay(2);
-        setCurrentOrderIndex(5);
+        setCurrentOrderIndex(3);
         setSelectedIngredients([]);
         // Explicit timer reset for Day 2
         setTimeLeft(20);
@@ -636,7 +636,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             <div className="flex items-center gap-2">
               <span className="text-2xl">☀️</span>
               <div className="flex gap-1">
-                {Array.from({length: 5}, (_, i) => {
+                {Array.from({length: 3}, (_, i) => {
                   let color = 'bg-gray-300'; // Pending
                   if (i < pizzasSoldDay1) {
                     color = 'bg-green-500'; // Success
@@ -657,7 +657,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
             <div className="flex items-center gap-2">
               <span className="text-2xl">🌙</span>
               <div className="flex gap-1">
-                {Array.from({length: 5}, (_, i) => {
+                {Array.from({length: 3}, (_, i) => {
                   let color = 'bg-gray-300'; // Pending
                   if (i < pizzasSoldDay2) {
                     color = 'bg-green-500'; // Success
