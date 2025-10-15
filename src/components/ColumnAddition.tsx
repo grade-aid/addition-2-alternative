@@ -292,10 +292,30 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
 
   const handleInputChange = (type: 'answer' | 'carries', index: number, value: string) => {
     if (value === '' || /^\d$/.test(value)) {
-      setUserInputs(prev => ({
-        ...prev,
-        [type]: prev[type].map((v, i) => i === index ? value : v)
-      }));
+      setUserInputs(prev => {
+        // Determine required array length based on current context
+        let requiredLength: number;
+        if (phase === 'earnings-calculation') {
+          requiredLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1;
+        } else {
+          const maxLength = Math.max(currentQuestion.topNumber.length, currentQuestion.bottomNumber.length);
+          requiredLength = type === 'answer' ? maxLength + 1 : maxLength;
+        }
+        
+        // Create array with proper length, preserving existing values
+        const currentArray = [...prev[type]];
+        while (currentArray.length < requiredLength) {
+          currentArray.push('');
+        }
+        
+        // Update the specific index
+        currentArray[index] = value;
+        
+        return {
+          ...prev,
+          [type]: currentArray
+        };
+      });
       setIsCorrect(null); // Reset validation
     }
   };
