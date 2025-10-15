@@ -400,6 +400,10 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const continuePractice = () => {
+    // Reset all input states for fresh start
+    setUserInputs({ answer: [], carries: [] });
+    setIsCorrect(null);
+    
     setPhase('practice');
     setShowEarningsCalculation(false);
     
