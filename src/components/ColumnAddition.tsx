@@ -523,7 +523,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                     <div className="flex gap-2 items-center">
                       <span className="text-2xl font-mono mr-2 invisible">$</span>
                       {/* Empty spacer for overflow position */}
-                      <div className="w-4 h-12"></div>
+                      <div className="w-2 h-12"></div>
                       {Array.from({ length: Math.max(day1Earnings.toString().length, day2Earnings.toString().length) }, (_, i) => (
                         <div key={i} className="w-12 h-12 flex items-center justify-center">
                           <Input
