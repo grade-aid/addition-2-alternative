@@ -787,21 +787,6 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
                         ) : null;
                       })}
                     </div>
-                    <div className="border-t border-yellow-300 pt-3 space-y-1 mb-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-700">Base Pizza:</span>
-                        <span className="font-semibold">${5 * priceMultiplier}</span>
-                      </div>
-                      {currentOrder.ingredients.map(ingId => {
-                        const ingredient = INGREDIENTS.find(i => i.id === ingId);
-                        return ingredient ? (
-                          <div key={ingId} className="flex justify-between text-sm">
-                            <span className="text-gray-700">{ingredient.emoji} {ingredient.name}:</span>
-                            <span className="font-semibold">${ingredient.price * priceMultiplier}</span>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
                     <div className="flex items-center justify-between border-t border-yellow-300 pt-2">
                       <div className="text-2xl font-bold text-green-600">
                         Total: ${currentOrder.totalPrice * priceMultiplier}
