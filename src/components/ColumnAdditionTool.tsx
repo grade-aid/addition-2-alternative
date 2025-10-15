@@ -1,7 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { CheckCircle } from 'lucide-react';
 
 interface ColumnAdditionToolProps {
   topNumber: number;
@@ -110,21 +107,32 @@ export const ColumnAdditionTool: React.FC<ColumnAdditionToolProps> = ({
   const paddedBottom = bottomNumber.toString().padStart(maxLength, ' ');
 
   return (
-    <div className={`flex flex-col items-center space-y-6 ${className}`}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }} className={className}>
       {/* Interactive Column Addition */}
-      <div className="bg-gray-50 p-8 rounded-2xl">
-        <div className="flex flex-col items-center space-y-4">
+      <div style={{ background: '#f9fafb', padding: '32px', borderRadius: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           {/* Carry row */}
-          <div className="flex gap-2 items-center">
-            {showPrefix && <span className="text-2xl font-mono mr-2 invisible">{showPrefix}</span>}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {showPrefix && <span style={{ fontSize: '24px', fontFamily: 'monospace', marginRight: '8px', visibility: 'hidden' }}>{showPrefix}</span>}
             {/* Empty spacer for overflow position */}
-            <div className="w-12 h-12"></div>
+            <div style={{ width: '48px', height: '48px' }}></div>
             {Array.from({ length: maxLength }, (_, i) => (
-              <div key={i} className="w-12 h-12 flex items-center justify-center">
-                <Input
+              <div key={i} style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <input
                   type="text"
                   maxLength={1}
-                  className="w-10 h-10 text-center text-sm bg-red-50 border border-red-200 text-red-700 font-bold p-0 rounded"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#b91c1c',
+                    fontWeight: 'bold',
+                    padding: '0',
+                    borderRadius: '4px'
+                  }}
                   placeholder=""
                   value={userInputs.carries[i] || ''}
                   onChange={(e) => handleInputChange('carries', i, e.target.value)}
@@ -134,41 +142,90 @@ export const ColumnAdditionTool: React.FC<ColumnAdditionToolProps> = ({
           </div>
           
           {/* First number */}
-          <div className="flex gap-2 items-center">
-            {showPrefix && <span className="text-2xl font-mono mr-2">{showPrefix}</span>}
-            <div className="w-12 h-12"></div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {showPrefix && <span style={{ fontSize: '24px', fontFamily: 'monospace', marginRight: '8px' }}>{showPrefix}</span>}
+            <div style={{ width: '48px', height: '48px' }}></div>
             {paddedTop.split('').map((digit, i) => (
-              <div key={i} className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold border-b-2 border-gray-300">
+              <div key={i} style={{ 
+                width: '48px', 
+                height: '48px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '24px', 
+                fontFamily: 'monospace', 
+                fontWeight: 'bold', 
+                borderBottom: '2px solid #d1d5db' 
+              }}>
                 {digit.trim() && digit}
               </div>
             ))}
           </div>
           
           {/* Second number with plus sign */}
-          <div className="flex gap-2 items-center">
-            {showPrefix && <span className="text-2xl font-mono mr-2 invisible">{showPrefix}</span>}
-            <div className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold">
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {showPrefix && <span style={{ fontSize: '24px', fontFamily: 'monospace', marginRight: '8px', visibility: 'hidden' }}>{showPrefix}</span>}
+            <div style={{ 
+              width: '48px', 
+              height: '48px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '24px', 
+              fontFamily: 'monospace', 
+              fontWeight: 'bold' 
+            }}>
               +
             </div>
             {paddedBottom.split('').map((digit, i) => (
-              <div key={i} className="w-12 h-12 flex items-center justify-center text-2xl font-mono font-bold border-b-2 border-gray-300">
+              <div key={i} style={{ 
+                width: '48px', 
+                height: '48px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '24px', 
+                fontFamily: 'monospace', 
+                fontWeight: 'bold', 
+                borderBottom: '2px solid #d1d5db' 
+              }}>
                 {digit.trim() && digit}
               </div>
             ))}
           </div>
           
           {/* Line separator */}
-          <div className="w-full h-1 bg-brand-black/20 rounded-full"></div>
+          <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.1)', borderRadius: '9999px' }}></div>
           
           {/* Answer row */}
-          <div className="flex gap-2 items-center">
-            {showPrefix && <span className="text-2xl font-mono mr-2">{showPrefix}</span>}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {showPrefix && <span style={{ fontSize: '24px', fontFamily: 'monospace', marginRight: '8px' }}>{showPrefix}</span>}
             {Array.from({ length: maxLength + 1 }, (_, i) => (
-              <div key={i} className="w-12 h-12 flex items-center justify-center border-2 border-primary/30 rounded-lg bg-white">
-                <Input
+              <div key={i} style={{ 
+                width: '48px', 
+                height: '48px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                border: '2px solid rgba(59, 130, 246, 0.3)', 
+                borderRadius: '8px', 
+                background: 'white' 
+              }}>
+                <input
                   type="text"
                   maxLength={1}
-                  className="w-full h-full text-center text-2xl font-mono font-bold border-none bg-transparent p-0"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    textAlign: 'center',
+                    fontSize: '24px',
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    background: 'transparent',
+                    padding: '0',
+                    outline: 'none'
+                  }}
                   placeholder=""
                   value={userInputs.answer[i] || ''}
                   onChange={(e) => handleInputChange('answer', i, e.target.value)}
@@ -180,22 +237,44 @@ export const ColumnAdditionTool: React.FC<ColumnAdditionToolProps> = ({
       </div>
       
       {/* Check Button */}
-      <Button onClick={checkAnswer} className="grade-button primary">
+      <button 
+        onClick={checkAnswer}
+        style={{
+          padding: '12px 24px',
+          fontSize: '16px',
+          fontWeight: '600',
+          color: 'white',
+          background: '#3b82f6',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          transition: 'background 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+        onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+      >
         Check Answer
-      </Button>
+      </button>
       
       {/* Feedback */}
       {isCorrect !== null && (
-        <div className={`p-6 rounded-2xl ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
+        <div style={{ 
+          padding: '24px', 
+          borderRadius: '16px', 
+          background: isCorrect ? '#dcfce7' : '#fee2e2' 
+        }}>
           {isCorrect ? (
-            <div className="flex items-center gap-2 text-green-700">
-              <CheckCircle className="w-6 h-6" />
-              <h4 className="text-xl font-bold">Perfect! ✓</h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <h4 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Perfect! ✓</h4>
             </div>
           ) : (
             <>
-              <h4 className="text-xl font-bold text-red-700 mb-2">Not quite right</h4>
-              <p className="text-lg text-red-600">
+              <h4 style={{ fontSize: '20px', fontWeight: 'bold', color: '#b91c1c', marginBottom: '8px' }}>Not quite right</h4>
+              <p style={{ fontSize: '18px', color: '#dc2626', margin: 0 }}>
                 Check your work and try again. Remember to work from right to left and carry when needed!
               </p>
             </>
