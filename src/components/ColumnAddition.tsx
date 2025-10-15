@@ -436,7 +436,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <>
                   <span className="px-4 py-2 bg-primary/10 rounded-full font-medium flex items-center gap-2">
                     <PenTool className="w-5 h-5" />
-                    Cycle {Math.floor(practiceIndex / 2) + 1}/3 - Question {(practiceIndex % 2) + 1}/2
+                    Question {(practiceIndex % 2) + 1}/2
                   </span>
                 </>
               )}
