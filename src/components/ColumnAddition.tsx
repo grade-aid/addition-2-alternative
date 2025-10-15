@@ -53,7 +53,8 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   // Pizza game tracking
   const [correctAnswerCount, setCorrectAnswerCount] = useState(0);
   const [currentCycle, setCurrentCycle] = useState(1);
-  const [currentRoundEarnings, setCurrentRoundEarnings] = useState(0);
+  const [day1Earnings, setDay1Earnings] = useState(0);
+  const [day2Earnings, setDay2Earnings] = useState(0);
   const [showEarningsCalculation, setShowEarningsCalculation] = useState(false);
 
   // Question generation based on difficulty
@@ -344,10 +345,18 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     }
   };
 
-  const handlePizzaGameComplete = (earnings: number) => {
-    setCurrentRoundEarnings(earnings);
+  const handlePizzaGameComplete = (day1: number, day2: number) => {
+    setDay1Earnings(day1);
+    setDay2Earnings(day2);
     setPhase('earnings-calculation');
     setShowEarningsCalculation(true);
+    // Reset user inputs for the earnings calculation
+    const maxLength = Math.max(day1.toString().length, day2.toString().length);
+    setUserInputs({
+      answer: new Array(maxLength + 1).fill(''),
+      carries: new Array(maxLength + 1).fill('')
+    });
+    setIsCorrect(null);
   };
 
 
@@ -380,29 +389,199 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     return <PizzaGame onComplete={handlePizzaGameComplete} onClose={handlePizzaGameClose} />;
   }
 
-  // Show earnings calculation
+  // Show earnings calculation - interactive column addition
   if (phase === 'earnings-calculation' && showEarningsCalculation) {
+    const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length);
+    const paddedDay1 = day1Earnings.toString().padStart(maxLength, ' ');
+    const paddedDay2 = day2Earnings.toString().padStart(maxLength, ' ');
+    
+    const checkEarningsAnswer = () => {
+      const totalEarnings = day1Earnings + day2Earnings;
+      const correctAnswer = totalEarnings.toString().padStart(maxLength + 1, '').split('');
+      
+      // Calculate correct carries
+      const correctCarries: string[] = new Array(maxLength + 1).fill('');
+      let carry = 0;
+      for (let i = maxLength - 1; i >= 0; i--) {
+        const d1 = parseInt(paddedDay1[i]?.trim() || '0');
+        const d2 = parseInt(paddedDay2[i]?.trim() || '0');
+        const sum = d1 + d2 + carry;
+        if (sum >= 10) {
+          correctCarries[i] = '1';
+          carry = 1;
+        } else {
+          carry = 0;
+        }
+      }
+      
+      // Check if user's answer matches
+      const answerMatch = correctAnswer.every((digit, i) => 
+        (digit.trim() === '' && userInputs.answer[i] === '') || 
+        digit.trim() === userInputs.answer[i]
+      );
+      
+      const carriesMatch = correctCarries.every((carry, i) => 
+        carry === userInputs.carries[i]
+      );
+      
+      if (answerMatch && carriesMatch) {
+        setIsCorrect(true);
+      } else {
+        setIsCorrect(false);
+      }
+    };
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-4xl p-8">
-          <div className="text-center space-y-8">
-            <h1 className="font-display text-4xl font-bold text-brand-black mb-2">
-              🎉 Pizza Round {currentCycle} Complete!
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Great job! You earned <strong>${currentRoundEarnings}</strong> in this round.
-            </p>
-
-            {/* Earnings Display */}
-            <div className="my-8">
-              <Card className="p-8 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                <h3 className="text-3xl font-bold text-green-700 mb-4">Round {currentCycle} Earnings</h3>
-                <p className="text-6xl font-bold text-green-800">${currentRoundEarnings}</p>
-              </Card>
+        <Card className="w-full max-w-2xl p-8">
+          <div className="space-y-8">
+            {/* Title */}
+            <div className="text-center">
+              <h1 className="font-display text-4xl font-bold text-brand-black mb-2">
+                🎉 Pizza Round Complete!
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Add your earnings from Day 1 and Day 2!
+              </p>
+              <div className="mt-4 flex justify-center gap-4">
+                <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full font-medium">
+                  Day 1: ${day1Earnings}
+                </span>
+                <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full font-medium">
+                  Day 2: ${day2Earnings}
+                </span>
+              </div>
             </div>
-            <Button onClick={continuePractice} className="grade-button accent text-lg px-8 py-4">
-              {practiceIndex >= practiceQuestions.length - 1 ? 'Finish' : 'Continue to Next Round'} <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+
+            {/* Check Button */}
+            <div className="flex justify-center">
+              <Button 
+                onClick={checkEarningsAnswer} 
+                className="grade-button"
+                disabled={isCorrect === true}
+              >
+                Check Answer
+              </Button>
+            </div>
+
+            {/* Calculation Area */}
+            <div className="bg-white rounded-3xl p-8 border-4 border-brand-black/10">
+              <div className="flex flex-col items-center space-y-6">
+                
+                {/* Carry Row */}
+                <div className="flex justify-center">
+                  <div className="flex gap-2">
+                    <div style={{ width: '48px' }}></div>
+                    {Array.from({ length: maxLength }, (_, i) => (
+                      <div key={`carry-${i}`} className="flex justify-center" style={{ width: '48px' }}>
+                        <Input
+                          type="text"
+                          value={userInputs.carries[i] || ''}
+                          onChange={(e) => handleInputChange('carries', i, e.target.value)}
+                          className="w-8 h-8 text-center text-sm p-1 border-secondary/50 bg-secondary/10"
+                          maxLength={1}
+                          placeholder=""
+                          disabled={isCorrect === true}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Day 1 Earnings Row */}
+                <div className="flex justify-center">
+                  <div className="flex gap-2">
+                    <div className="flex items-center justify-center w-12 h-12 text-xl font-bold">
+                      $
+                    </div>
+                    {paddedDay1.split('').map((digit, index) => (
+                      <div key={`day1-${index}`} className="digit-box">
+                        {digit.trim() || ''}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Day 2 Earnings Row */}
+                <div className="flex justify-center">
+                  <div className="flex gap-2">
+                    <div className="flex items-center justify-center w-12 h-12 text-2xl font-bold">
+                      +$
+                    </div>
+                    {paddedDay2.split('').map((digit, index) => (
+                      <div key={`day2-${index}`} className="digit-box">
+                        {digit.trim() || ''}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Horizontal Line */}
+                <div className="w-full h-1 bg-brand-black/20 rounded-full"></div>
+
+                {/* Answer Row */}
+                <div className="flex justify-center">
+                  <div className="flex gap-2">
+                    {/* Final carry position */}
+                    <div className="flex justify-center items-center" style={{ width: '48px' }}>
+                      <Input
+                        type="text"
+                        value={userInputs.answer[maxLength] || ''}
+                        onChange={(e) => handleInputChange('answer', maxLength, e.target.value)}
+                        className="w-12 h-12 text-center font-mono font-bold p-1"
+                        maxLength={1}
+                        placeholder=""
+                        disabled={isCorrect === true}
+                      />
+                    </div>
+                    
+                    {/* Main answer positions */}
+                    {Array.from({ length: maxLength }, (_, i) => (
+                      <div key={`answer-${i}`} className="flex justify-center" style={{ width: '48px' }}>
+                        <Input
+                          type="text"
+                          value={userInputs.answer[i] || ''}
+                          onChange={(e) => handleInputChange('answer', i, e.target.value)}
+                          className="w-12 h-12 text-center font-mono font-bold p-1"
+                          maxLength={1}
+                          placeholder=""
+                          disabled={isCorrect === true}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Feedback */}
+                {isCorrect !== null && (
+                  <div className={`text-center p-4 rounded-lg font-medium ${
+                    isCorrect 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {isCorrect ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <CheckCircle className="w-6 h-6" />
+                        Perfect! Total earnings: ${day1Earnings + day2Earnings} 🎉
+                      </div>
+                    ) : (
+                      <div>
+                        Not quite right. Check your carries and answer digits.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Continue Button - only show after correct answer */}
+            {isCorrect && (
+              <div className="flex justify-center">
+                <Button onClick={continuePractice} className="grade-button accent text-lg px-8 py-4">
+                  {practiceIndex >= practiceQuestions.length - 1 ? 'Finish' : 'Continue to Next Round'} <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>

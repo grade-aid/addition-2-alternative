@@ -335,7 +335,7 @@ class PizzaScene {
 }
 
 interface PizzaGameProps {
-  onComplete: (earnings: number) => void;
+  onComplete: (day1Earnings: number, day2Earnings: number) => void;
   onClose: () => void;
 }
 
@@ -352,7 +352,12 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
   const [pizzasSold, setPizzasSold] = useState(0);
   const [showOrderComplete, setShowOrderComplete] = useState(false);
   
-  // Order attempt tracking
+  // Day tracking
+  const [currentDay, setCurrentDay] = useState(1);
+  const [day1Earnings, setDay1Earnings] = useState(0);
+  const [pizzasSoldDay1, setPizzasSoldDay1] = useState(0);
+  
+  // Order attempt tracking (per day)
   const [attempts, setAttempts] = useState(0);
   const [failed, setFailed] = useState(0);
   
@@ -425,42 +430,43 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
       setTimeLeft(20);
       setIsTimerActive(true);
       setCustomerMood('😊');
-    } else if (!currentOrder && gameStarted) {
-      // Game complete
-      const nextCount = sessionGameCount + 1;
-      const multipliers = [1, 4, 8];
-      setPriceMultiplier(multipliers[nextCount % 3]);
-      setSessionGameCount(nextCount);
-      onComplete(totalEarnings);
     }
-  }, [currentOrderIndex, gameStarted, currentOrder, orders.length, totalEarnings, onComplete, sessionGameCount]);
+  }, [currentOrderIndex, gameStarted, currentOrder]);
 
   const nextOrder = () => {
-    // Check if round is complete (3 total attempts)
+    // Check if day is complete (3 total attempts per day)
     if (attempts >= 3) {
-      // Game completed
-      const nextCount = sessionGameCount + 1;
-      const multipliers = [1, 4, 8];
-      setPriceMultiplier(multipliers[nextCount % 3]);
-      setSessionGameCount(nextCount);
-      onComplete(totalEarnings);
-      return;
-    } else {
-      // Check bounds to prevent going beyond available orders
-      const nextIndex = currentOrderIndex + 1;
-      if (nextIndex >= orders.length) {
-        // No more orders, complete game
+      if (currentDay === 1) {
+        // Day 1 complete, move to Day 2
+        setDay1Earnings(totalEarnings);
+        setPizzasSoldDay1(pizzasSold);
+        setCurrentDay(2);
+        setAttempts(0);
+        setFailed(0);
+        setPizzasSold(0);
+        setTotalEarnings(0);
+        setCurrentOrderIndex(0);
+        setSelectedIngredients([]);
+      } else {
+        // Day 2 complete, game over
         const nextCount = sessionGameCount + 1;
         const multipliers = [1, 4, 8];
         setPriceMultiplier(multipliers[nextCount % 3]);
         setSessionGameCount(nextCount);
-        onComplete(totalEarnings);
-        return;
+        onComplete(day1Earnings, totalEarnings);
       }
-      
-      setCurrentOrderIndex(nextIndex);
-      setSelectedIngredients([]);
+      return;
     }
+    
+    // Move to next order
+    const nextIndex = currentOrderIndex + 1;
+    if (nextIndex >= orders.length) {
+      // No more orders, restart from beginning
+      setCurrentOrderIndex(0);
+    } else {
+      setCurrentOrderIndex(nextIndex);
+    }
+    setSelectedIngredients([]);
   };
 
   // Initialize Three.js scene
@@ -575,7 +581,7 @@ export const PizzaGame: React.FC<PizzaGameProps> = ({ onComplete, onClose }) => 
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-4 mb-4">
             <h1 className="font-display text-4xl font-bold text-brand-black">
-              🍕 Pizza Game
+              🍕 Pizza Game - Day {currentDay}
             </h1>
             <div className="text-4xl">{customerMood}</div>
           </div>
