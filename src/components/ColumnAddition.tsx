@@ -448,7 +448,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                           <Input
                             type="text"
                             maxLength={1}
-                            className="w-8 h-8 text-center text-sm border-none bg-transparent text-red-600 font-bold p-0"
+                            className="w-8 h-8 text-center text-sm bg-red-50 border border-red-200 text-red-700 font-bold p-0"
                             placeholder=""
                             value={userInputs.carries[i] || ''}
                             onChange={(e) => handleInputChange('carries', i, e.target.value)}
