@@ -511,15 +511,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 {isCorrect !== null && (
                   <div className={`p-6 rounded-2xl ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
                     {isCorrect ? (
-                      <>
-                        <h4 className="text-xl font-bold text-green-700 mb-2">Perfect! 🎉</h4>
-                        <p className="text-lg text-green-600">
-                          You correctly calculated your total earnings: <strong>${day1Earnings + day2Earnings}</strong>
-                        </p>
-                        <p className="text-sm text-green-600 mt-2">
-                          This is exactly how we use column addition in real life - to add up earnings, expenses, and more!
-                        </p>
-                      </>
+                      <h4 className="text-xl font-bold text-green-700">Perfect</h4>
                     ) : (
                       <>
                         <h4 className="text-xl font-bold text-red-700 mb-2">Not quite right</h4>
