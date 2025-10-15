@@ -189,12 +189,18 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     
     setExamples(solvedExamples);
     
-    // Generate 10 practice questions
-    const practice = Array.from({ length: 10 }, (_, i) => {
-      const diffIndex = Math.floor(i / 3.3); // Distribute difficulties
-      const difficulty = ['easy', 'medium', 'hard'][Math.min(diffIndex, 2)] as 'easy' | 'medium' | 'hard';
-      return generateQuestion(difficulty);
-    });
+    // Generate 6 practice questions: 3 cycles of 2 questions each
+    const practice = [
+      // Cycle 1: 3-digit numbers (easy)
+      generateQuestion('easy'),
+      generateQuestion('easy'),
+      // Cycle 2: 4-digit numbers (medium)
+      generateQuestion('medium'),
+      generateQuestion('medium'),
+      // Cycle 3: 5-digit numbers (hard)
+      generateQuestion('hard'),
+      generateQuestion('hard'),
+    ];
     
     setPracticeQuestions(practice);
     
@@ -396,6 +402,12 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   const continuePractice = () => {
     setPhase('practice');
     setShowEarningsCalculation(false);
+    
+    // Check if all 6 questions are complete (after 3rd earnings calculation)
+    if (practiceIndex >= practiceQuestions.length - 1) {
+      // All cycles complete!
+      setPhase('complete' as any);
+    }
   };
 
 
@@ -406,6 +418,48 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   // Show pizza game
   if (phase === 'pizza-game') {
     return <PizzaGame onComplete={handlePizzaGameComplete} onClose={handlePizzaGameClose} />;
+  }
+
+  // Show completion screen
+  if (phase === 'complete' as any) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-4xl p-12 text-center">
+          <div className="space-y-6">
+            <div className="text-8xl">🎉</div>
+            <h1 className="font-display text-5xl font-bold text-brand-black">
+              Congratulations!
+            </h1>
+            <p className="text-2xl text-muted-foreground">
+              You've completed all 3 cycles of column addition practice!
+            </p>
+            <div className="grid grid-cols-3 gap-6 mt-8 mb-8">
+              <Card className="p-6 bg-green-50 border-green-200">
+                <div className="text-4xl mb-2">✓</div>
+                <h3 className="text-xl font-bold text-green-700">Cycle 1</h3>
+                <p className="text-green-600">3-digit numbers</p>
+              </Card>
+              <Card className="p-6 bg-yellow-50 border-yellow-200">
+                <div className="text-4xl mb-2">✓</div>
+                <h3 className="text-xl font-bold text-yellow-700">Cycle 2</h3>
+                <p className="text-yellow-600">4-digit numbers</p>
+              </Card>
+              <Card className="p-6 bg-red-50 border-red-200">
+                <div className="text-4xl mb-2">✓</div>
+                <h3 className="text-xl font-bold text-red-700">Cycle 3</h3>
+                <p className="text-red-600">5-digit numbers</p>
+              </Card>
+            </div>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="grade-button accent text-xl px-12 py-6"
+            >
+              Practice Again
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   // Show earnings calculation
@@ -525,7 +579,11 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
               </div>
             </div>
 
-            <Button onClick={continuePractice} className="grade-button accent text-lg px-8 py-4">
+            <Button 
+              onClick={continuePractice} 
+              className="grade-button accent text-lg px-8 py-4"
+              disabled={isCorrect !== true}
+            >
               Continue Practice <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
@@ -561,7 +619,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                 <>
                   <span className="px-4 py-2 bg-primary/10 rounded-full font-medium flex items-center gap-2">
                     <PenTool className="w-5 h-5" />
-                    Question {practiceIndex + 1}/10
+                    Cycle {Math.floor(practiceIndex / 2) + 1}/3 - Question {(practiceIndex % 2) + 1}/2
                   </span>
                 </>
               )}
@@ -846,7 +904,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
                   />
                 ))
               ) : (
-                Array.from({ length: 10 }, (_, i) => (
+                Array.from({ length: 6 }, (_, i) => (
                   <div 
                     key={`progress-${i}`}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
