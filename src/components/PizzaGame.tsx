@@ -20,14 +20,14 @@ interface PizzaOrder {
 }
 
 const INGREDIENTS: Ingredient[] = [
-  { id: 'sauce', name: 'Tomato Sauce', price: 1, emoji: '🍅', color: '#C73E1A', shape: 'sauce' },
-  { id: 'cheese', name: 'Mozzarella', price: 2, emoji: '🧀', color: '#FFF8DC', shape: 'cheese' },
-  { id: 'pepperoni', name: 'Pepperoni', price: 3, emoji: '🍕', color: '#B22222', shape: 'pepperoni' },
-  { id: 'mushroom', name: 'Mushrooms', price: 2, emoji: '🍄', color: '#D2B48C', shape: 'mushroom' },
-  { id: 'pepper', name: 'Bell Peppers', price: 2, emoji: '🫑', color: '#228B22', shape: 'pepper' },
-  { id: 'olive', name: 'Black Olives', price: 2, emoji: '🫒', color: '#2F2F2F', shape: 'olive' },
-  { id: 'sausage', name: 'Italian Sausage', price: 3, emoji: '🌭', color: '#8B4513', shape: 'sausage' },
-  { id: 'onion', name: 'Red Onions', price: 1, emoji: '🧅', color: '#9370DB', shape: 'onion' }
+  { id: 'sauce', name: 'Tomato Sauce', price: 3, emoji: '🍅', color: '#C73E1A', shape: 'sauce' },
+  { id: 'cheese', name: 'Mozzarella', price: 4, emoji: '🧀', color: '#FFF8DC', shape: 'cheese' },
+  { id: 'pepperoni', name: 'Pepperoni', price: 5, emoji: '🍕', color: '#B22222', shape: 'pepperoni' },
+  { id: 'mushroom', name: 'Mushrooms', price: 4, emoji: '🍄', color: '#D2B48C', shape: 'mushroom' },
+  { id: 'pepper', name: 'Bell Peppers', price: 4, emoji: '🫑', color: '#228B22', shape: 'pepper' },
+  { id: 'olive', name: 'Black Olives', price: 4, emoji: '🫒', color: '#2F2F2F', shape: 'olive' },
+  { id: 'sausage', name: 'Italian Sausage', price: 5, emoji: '🌭', color: '#8B4513', shape: 'sausage' },
+  { id: 'onion', name: 'Red Onions', price: 3, emoji: '🧅', color: '#9370DB', shape: 'onion' }
 ];
 
 class PizzaScene {
