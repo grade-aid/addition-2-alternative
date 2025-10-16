@@ -33,6 +33,43 @@ export const ColumnAdditionExercises: React.FC<ColumnAdditionExercisesProps> = (
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
 
+  // Sound effect functions
+  const playSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+    } catch (error) {
+      console.log('Audio not supported');
+    }
+  };
+
+  const playButtonClick = () => {
+    playSound(400, 0.1, 'sine');
+  };
+
+  const playCorrectSound = () => {
+    playSound(523.25, 0.15, 'sine'); // C5
+    setTimeout(() => playSound(659.25, 0.15, 'sine'), 100); // E5
+    setTimeout(() => playSound(783.99, 0.2, 'sine'), 200); // G5
+  };
+
+  const playWrongSound = () => {
+    playSound(200, 0.3, 'sawtooth');
+  };
+
   // Question generation based on difficulty
   const generateQuestion = useCallback((difficulty: 'easy' | 'medium' | 'hard'): Question => {
     let topNum: number, bottomNum: number;
@@ -145,6 +182,8 @@ export const ColumnAdditionExercises: React.FC<ColumnAdditionExercisesProps> = (
   };
 
   const checkAnswer = () => {
+    playButtonClick();
+    
     const currentQuestion = practiceQuestions[currentIndex];
     if (!currentQuestion) return;
     
@@ -158,6 +197,7 @@ export const ColumnAdditionExercises: React.FC<ColumnAdditionExercisesProps> = (
     setIsCorrect(correct);
     
     if (correct) {
+      playCorrectSound();
       setCorrectCount(prev => prev + 1);
       
       // Auto advance after correct answer
@@ -168,6 +208,8 @@ export const ColumnAdditionExercises: React.FC<ColumnAdditionExercisesProps> = (
           onComplete();
         }
       }, 1500);
+    } else {
+      playWrongSound();
     }
   };
 
