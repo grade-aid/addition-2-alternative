@@ -56,6 +56,43 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   const [day2Earnings, setDay2Earnings] = useState(0);
   const [showEarningsCalculation, setShowEarningsCalculation] = useState(false);
 
+  // Sound effect functions
+  const playSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+    } catch (error) {
+      console.log('Audio not supported');
+    }
+  };
+
+  const playButtonClick = () => {
+    playSound(400, 0.1, 'sine');
+  };
+
+  const playCorrectSound = () => {
+    playSound(523.25, 0.15, 'sine'); // C5
+    setTimeout(() => playSound(659.25, 0.15, 'sine'), 100); // E5
+    setTimeout(() => playSound(783.99, 0.2, 'sine'), 200); // G5
+  };
+
+  const playWrongSound = () => {
+    playSound(200, 0.3, 'sawtooth');
+  };
+
   // Question generation based on difficulty
   const generateQuestion = useCallback((difficulty: 'easy' | 'medium' | 'hard'): Question => {
     let topNum: number, bottomNum: number;
@@ -215,6 +252,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   }, [generateQuestion, generateNoCarryQuestion, solveQuestion]);
 
   const nextExample = () => {
+    playButtonClick();
     if (exampleIndex < examples.length - 1) {
       setExampleIndex(prev => prev + 1);
       setCurrentStep(-1); // Reset to beginning of new example
@@ -223,6 +261,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const startPractice = () => {
+    playButtonClick();
     setPhase('practice');
     setPracticeIndex(0);
     setIsCorrect(null);
@@ -235,6 +274,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const nextStep = () => {
+    playButtonClick();
     const currentExample = examples[exampleIndex];
     if (currentExample && currentStep < currentExample.steps.length - 1) {
       setCurrentStep(prev => prev + 1);
@@ -261,6 +301,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   }, [autoPlay, isAutoPlaying]);
 
   const startAutoPlay = () => {
+    playButtonClick();
     if (currentStep === -1) {
       setCurrentStep(0);
     }
@@ -321,6 +362,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const checkAnswer = () => {
+    playButtonClick();
     const currentQuestion = practiceQuestions[practiceIndex];
     if (!currentQuestion) return;
     
@@ -332,6 +374,12 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     
     const correct = answerCorrect && carriesCorrect;
     setIsCorrect(correct);
+    
+    if (correct) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
     
     // Track correct answers for pizza game trigger
     if (correct) {
@@ -383,6 +431,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const checkEarningsAnswer = () => {
+    playButtonClick();
     const total = day1Earnings + day2Earnings;
     const totalStr = total.toString();
     const maxLength = Math.max(day1Earnings.toString().length, day2Earnings.toString().length) + 1;
@@ -399,6 +448,12 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
     // Compare user answer with correct answer
     const answerCorrect = userInputs.answer.every((val, i) => val === correctAnswer[i]);
     setIsCorrect(answerCorrect);
+    
+    if (answerCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
   };
 
   const handlePizzaGameComplete = (day1: number, day2: number) => {
@@ -420,6 +475,7 @@ export const ColumnAddition: React.FC<ColumnAdditionProps> = ({ className = '' }
   };
 
   const continuePractice = () => {
+    playButtonClick();
     // Reset all input states for fresh start
     setUserInputs({ answer: [], carries: [] });
     setIsCorrect(null);
